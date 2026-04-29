@@ -44,6 +44,9 @@ archseed adr new "Use PostgreSQL instead of MySQL"
 
 # Generate agent task prompts
 archseed agent generate --phase bootstrap
+
+# Sync issues and labels to GitHub
+archseed github sync
 ```
 
 ## Guided Mode
@@ -52,13 +55,14 @@ Run `archseed init my-project --guided` to interactively choose:
 
 | Option | Choices |
 |---|---|
-| **Backend** | Go (1.26+), NestJS |
-| **Frontend** | React, Next.js, Vanilla, Remix |
-| **Database** | PostgreSQL, MySQL, SQLite |
+| **Backend** | None, Go (1.26+), NestJS, Node/Express, Java/Quarkus |
+| **Frontend** | None, React, Next.js, Vanilla, Remix |
+| **Database** | None, PostgreSQL, MySQL, SQLite, MongoDB, DynamoDB |
 | **Observability** | Yes / No (generates OBSERVABILITY.md) |
 | **Docker** | Yes / No |
-| **Auth** | Yes / No |
+| **Auth** | None, Own auth, Keycloak (OIDC) |
 | **AI Agents** | Yes / No |
+| **Deploy** | Container (Docker Compose), Serverless |
 
 The guided mode builds a custom project configuration from your answers, generating only the relevant files for your stack choices.
 
@@ -85,11 +89,12 @@ The guided mode builds a custom project configuration from your answers, generat
 ```bash
 archseed init               # Create a new project (--preset or --guided)
 archseed preset list        # List available presets
-archseed preset show        # Show preset details
+archseed preset show       # Show preset details
 archseed doctor             # Validate project structure
-archseed adr new            # Create an ADR
+archseed adr new           # Create an ADR
 archseed agent generate     # Generate agent task prompts
-archseed audit generate     # Generate structured audit/review prompts
+archseed audit generate    # Generate structured audit/review prompts
+archseed github sync       # Sync issues and labels to GitHub
 ```
 
 ## Audit Pipeline
@@ -98,10 +103,10 @@ archseed audit generate     # Generate structured audit/review prompts
 
 | Layer | Model | Focus |
 |---|---|---|
-| Code Review | GPT-5.3 Codex | Bugs, testes, regressões, refactors |
-| Architecture | GPT-5.4 | Segurança, edge cases, decisões arquiteturais |
-| Consistency | Gemini 2.5 Pro | Documentação, integração, contexto amplo |
-| Frontend | Gemini 2.5 Flash | UI, UX, componentes, acessibilidade |
+| Code Review | DeepSeek V4 Flash | Bugs, testes, regressões, refactors |
+| Architecture | DeepSeek V4 Pro | Segurança, edge cases, decisões arquiteturais |
+| Consistency | OpenCode big-pickle | Documentação, integração, contexto amplo |
+| Frontend | OpenCode minimax-m2.5-free | UI, UX, componentes, acessibilidade |
 
 Each prompt uses the structured format: severity → file → explanation → scenario → fix → test.
 
@@ -123,10 +128,11 @@ archseed audit generate --layer architecture
 - [x] Core CLI with presets, init, doctor, ADR, agent tasks
 - [x] Interactive `--guided` mode (backend, frontend, database, observability)
 - [x] Audit pipeline with structured review prompts
-- [ ] GitHub Issues/Projects sync
+- [x] GitHub Issues/Projects sync (`github sync`)
 - [ ] Blueprint mode (`--from blueprint.yaml`)
 - [ ] `configure` and `regenerate` commands
 - [ ] More presets (automation-script, desktop-app, mobile-app)
+- [ ] Audit execution (run audits directly via API)
 
 ## License
 
