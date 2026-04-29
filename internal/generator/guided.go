@@ -21,18 +21,40 @@ func RunGuided(projectName string, force bool) error {
 	fmt.Println("\n=== Summary ===")
 	fmt.Printf("  Project:  %s\n", projectName)
 	fmt.Printf("  Remote:   %s\n", remoteURL)
-	fmt.Printf("  Backend:  %s/%s", cfg.Stack.Backend.Language, cfg.Stack.Backend.Framework)
-	if cfg.Stack.Backend.Router != "" {
-		fmt.Printf(" (%s)", cfg.Stack.Backend.Router)
+
+	hasAny := false
+	if cfg.Features.Backend {
+		hasAny = true
+		fmt.Printf("  Backend:  %s/%s", cfg.Stack.Backend.Language, cfg.Stack.Backend.Framework)
+		if cfg.Stack.Backend.Router != "" {
+			fmt.Printf(" (%s)", cfg.Stack.Backend.Router)
+		}
+		fmt.Println()
+	} else {
+		fmt.Println("  Backend:  None")
 	}
-	fmt.Println()
-	fmt.Printf("  Frontend: %s/%s (%s)\n", cfg.Stack.Frontend.Framework, cfg.Stack.Frontend.Styling, cfg.Stack.Frontend.BuildTool)
-	fmt.Printf("  Database: %s\n", cfg.Stack.Database.Primary)
-	fmt.Printf("  Docker:   %v\n", cfg.Features.Docker)
-	fmt.Printf("  Auth:     %v\n", cfg.Features.Auth)
-	fmt.Printf("  CI:       %v\n", cfg.Features.GitHub)
-	fmt.Printf("  Agents:   %v\n", cfg.Features.Agents)
-	fmt.Printf("  Observability: %v\n", cfg.Features.Observability)
+
+	if cfg.Features.Frontend {
+		hasAny = true
+		fmt.Printf("  Frontend: %s/%s (%s)\n", cfg.Stack.Frontend.Framework, cfg.Stack.Frontend.Styling, cfg.Stack.Frontend.BuildTool)
+	} else {
+		fmt.Println("  Frontend: None")
+	}
+
+	if cfg.Features.Database {
+		hasAny = true
+		fmt.Printf("  Database: %s\n", cfg.Stack.Database.Primary)
+	} else {
+		fmt.Println("  Database: None")
+	}
+
+	if hasAny {
+		fmt.Printf("  Docker:   %v\n", cfg.Features.Docker)
+		fmt.Printf("  Auth:     %v\n", cfg.Features.Auth)
+		fmt.Printf("  CI:       %v\n", cfg.Features.GitHub)
+		fmt.Printf("  Agents:   %v\n", cfg.Features.Agents)
+		fmt.Printf("  Observability: %v\n", cfg.Features.Observability)
+	}
 
 	confirmed, err := prompt.Confirm("Proceed with these choices?")
 	if err != nil {
@@ -92,49 +114,60 @@ func askQuestions(projectName string) (*config.PresetConfig, string, error) {
 	backend, err := prompt.Select("Choose your backend", []string{
 		"Go (1.26+)",
 		"NestJS",
+		"Node/Express",
+		"Java/Quarkus",
+		"None (no backend)",
 	})
 	if err != nil {
 		return nil, "", err
 	}
-
-	backendCfg := buildBackendConfig(backend)
 
 	frontend, err := prompt.Select("Choose your frontend", []string{
 		"React",
 		"Next.js",
 		"Vanilla",
 		"Remix",
+		"Vitest (experimental)",
+		"None (no frontend)",
 	})
 	if err != nil {
 		return nil, "", err
 	}
-
-	frontendCfg := buildFrontendConfig(frontend)
 
 	database, err := prompt.Select("Choose your database", []string{
 		"PostgreSQL",
 		"MySQL",
 		"SQLite",
+		"None (no database)",
 	})
 	if err != nil {
 		return nil, "", err
 	}
 
-	dbCfg := buildDatabaseConfig(database)
+	hasFeatures := backend != "None (no backend)" || frontend != "None (no frontend)" || database != "None (no database)"
 
-	observability, err := prompt.Confirm("Enable observability? (logs, metrics, tracing)")
-	if err != nil {
-		return nil, "", err
-	}
+	observability := false
+	docker := false
+	auth := false
+	agents := false
 
-	docker, err := prompt.Confirm("Enable Docker Compose for local development?")
-	if err != nil {
-		return nil, "", err
-	}
+	if hasFeatures {
+		observability, err = prompt.Confirm("Enable observability? (logs, metrics, tracing)")
+		if err != nil {
+			return nil, "", err
+		}
 
-	auth, err := prompt.Confirm("Enable authentication? (Keycloak OIDC)")
-	if err != nil {
-		return nil, "", err
+		docker, err = prompt.Confirm("Enable Docker Compose for local development?")
+		if err != nil {
+			return nil, "", err
+		}
+
+		if backend != "None (no backend)" {
+			auth, err = prompt.Confirm("Enable authentication? (Keycloak OIDC)")
+			if err != nil {
+				return nil, "", err
+			}
+		}
 	}
 
 	remoteURL, err := prompt.Input("Git remote URL (leave empty for none, e.g. git@github.com:user/repo.git)", func(s string) error {
@@ -144,12 +177,14 @@ func askQuestions(projectName string) (*config.PresetConfig, string, error) {
 		return nil, "", err
 	}
 
-	agents, err := prompt.Confirm("Enable AI agent support? (AGENTS.md, model routing)")
-	if err != nil {
-		return nil, "", err
+	if hasFeatures {
+		agents, err = prompt.Confirm("Enable AI agent support? (AGENTS.md, model routing)")
+		if err != nil {
+			return nil, "", err
+		}
 	}
 
-	return buildConfig(projectName, backendCfg, frontendCfg, dbCfg, observability, docker, auth, agents), remoteURL, nil
+	return buildConfig(projectName, backend, frontend, database, observability, docker, auth, agents), remoteURL, nil
 }
 
 func buildBackendConfig(choice string) config.Stack {
@@ -168,6 +203,14 @@ func buildBackendConfig(choice string) config.Stack {
 	case "NestJS":
 		s.Backend.Language = "typescript"
 		s.Backend.Framework = "nestjs"
+	case "Node/Express":
+		s.Backend.Language = "javascript"
+		s.Backend.Framework = "express"
+		s.Backend.APIContract = "openapi"
+	case "Java/Quarkus":
+		s.Backend.Language = "java"
+		s.Backend.Framework = "quarkus"
+		s.Backend.APIContract = "openapi"
 	}
 
 	return s
@@ -199,6 +242,12 @@ func buildFrontendConfig(choice string) config.FrontendStack {
 			Styling:   "tailwind",
 			BuildTool: "remix",
 		}
+	case "Vitest (experimental)":
+		return config.FrontendStack{
+			Framework: "vitest",
+			Styling:   "css",
+			BuildTool: "vite",
+		}
 	default:
 		return config.FrontendStack{
 			Framework: "react",
@@ -217,24 +266,30 @@ func buildDatabaseConfig(choice string) config.DatabaseStack {
 	case "SQLite":
 		return config.DatabaseStack{Primary: "sqlite"}
 	default:
-		return config.DatabaseStack{Primary: "postgres"}
+		return config.DatabaseStack{Primary: ""}
 	}
 }
 
 func buildConfig(
 	projectName string,
-	stack config.Stack,
-	frontendCfg config.FrontendStack,
-	dbCfg config.DatabaseStack,
+	backendChoice, frontendChoice, databaseChoice string,
 	observability, docker, auth, agents bool,
 ) *config.PresetConfig {
+	stack := buildBackendConfig(backendChoice)
+	frontendCfg := buildFrontendConfig(frontendChoice)
+	dbCfg := buildDatabaseConfig(databaseChoice)
+
+	hasBackend := backendChoice != "None (no backend)"
+	hasFrontend := frontendChoice != "None (no frontend)"
+	hasDB := databaseChoice != "None (no database)"
+
 	stack.Frontend = frontendCfg
 	stack.Database = dbCfg
 
 	features := config.Features{
-		Frontend:      true,
-		Backend:       true,
-		Database:      dbCfg.Primary != "",
+		Frontend:      hasFrontend,
+		Backend:       hasBackend,
+		Database:      hasDB,
 		Docker:        docker,
 		GitHub:        true,
 		Agents:        agents,
@@ -255,7 +310,7 @@ func buildConfig(
 
 	agentsCfg := config.Agents{
 		Enabled:               agents,
-		RequirePlanBeforeCode:  true,
+		RequirePlanBeforeCode: true,
 		RequireTestsForChanges: true,
 		RequireDocsUpdate:      true,
 	}
