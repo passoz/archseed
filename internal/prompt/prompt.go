@@ -1,78 +1,85 @@
 package prompt
 
 import (
-	"errors"
+	"bufio"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
-
-	"github.com/manifoldco/promptui"
 )
 
-// Select presents a list of options and returns the selected value.
+// Select presents a numbered list and returns the selected value.
 func Select(label string, items []string) (string, error) {
-	p := promptui.Select{
-		Label: label,
-		Items: items,
-		Size:  min(len(items), 10),
+	fmt.Println()
+	fmt.Printf("== %s ==\n", label)
+	for i, item := range items {
+		fmt.Printf("  %d. %s\n", i+1, item)
 	}
 
-	_, result, err := p.Run()
-	if err != nil {
-		return "", fmt.Errorf("prompt cancelled: %w", err)
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		fmt.Printf("Enter number (1-%d): ", len(items))
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			return "", fmt.Errorf("input cancelled: %w", err)
+		}
+
+		input = strings.TrimSpace(input)
+		n, err := strconv.Atoi(input)
+		if err != nil || n < 1 || n > len(items) {
+			fmt.Printf("Invalid option. Enter a number between 1 and %d.\n", len(items))
+			continue
+		}
+
+		return items[n-1], nil
 	}
-	return result, nil
 }
 
 // Confirm asks a yes/no question.
 func Confirm(label string) (bool, error) {
-	p := promptui.Select{
-		Label: label,
-		Items: []string{"Yes", "No"},
-		Size:  2,
-	}
+	fmt.Println()
+	fmt.Printf("== %s ==\n", label)
+	reader := bufio.NewReader(os.Stdin)
 
-	_, result, err := p.Run()
-	if err != nil {
-		return false, fmt.Errorf("prompt cancelled: %w", err)
+	for {
+		fmt.Print("Enter y/n: ")
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			return false, fmt.Errorf("input cancelled: %w", err)
+		}
+
+		input = strings.TrimSpace(strings.ToLower(input))
+		switch input {
+		case "y", "yes":
+			return true, nil
+		case "n", "no":
+			return false, nil
+		default:
+			fmt.Println("Enter 'y' or 'n'.")
+		}
 	}
-	return result == "Yes", nil
 }
 
 // Input asks for free-text input.
 func Input(label string, validate func(string) error) (string, error) {
-	p := promptui.Prompt{
-		Label:    label,
-		Validate: validate,
-	}
+	fmt.Println()
+	fmt.Printf("== %s ==\n", label)
+	reader := bufio.NewReader(os.Stdin)
 
-	result, err := p.Run()
-	if err != nil {
-		return "", fmt.Errorf("prompt cancelled: %w", err)
-	}
-	return strings.TrimSpace(result), nil
-}
+	for {
+		fmt.Print("> ")
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			return "", fmt.Errorf("input cancelled: %w", err)
+		}
 
-// NonEmpty validates that input is not empty.
-func NonEmpty(input string) error {
-	if strings.TrimSpace(input) == "" {
-		return errors.New("this field is required")
+		input = strings.TrimSpace(input)
+		if validate != nil {
+			if err := validate(input); err != nil {
+				fmt.Printf("Invalid: %v\n", err)
+				continue
+			}
+		}
+		return input, nil
 	}
-	return nil
-}
-
-// Port validates a port number.
-func Port(input string) error {
-	port, err := strconv.Atoi(strings.TrimSpace(input))
-	if err != nil || port < 1 || port > 65535 {
-		return errors.New("enter a valid port (1-65535)")
-	}
-	return nil
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
