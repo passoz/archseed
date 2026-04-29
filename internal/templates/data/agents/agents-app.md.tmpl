@@ -1,0 +1,64 @@
+# AGENTS.md — {{.AppName}}
+
+## Context
+
+This is the {{.AppName}} application of {{.ProjectName}}.
+
+{{if eq .AppType "backend"}}
+## Backend-Specific Rules
+
+- HTTP handlers must not contain business logic.
+- Domain layer must not import infrastructure packages.
+- Errors must be typed and wrapped with context.
+- Every new endpoint needs contract tests.
+- Database migrations must be backward-compatible.
+- Use dependency injection for all external services.
+{{end}}
+
+{{if eq .AppType "frontend"}}
+## Frontend-Specific Rules
+
+- Every component must be in its own file.
+- Use {{.Stack.Frontend.Framework}} functional components with hooks.
+- Style with {{.Stack.Frontend.Styling}}.
+- No inline styles — use class-based styling.
+- Every page must be responsive.
+- Test all user interactions.
+{{end}}
+
+## Commands
+
+{{if eq .AppType "backend"}}
+{{if eq .Stack.Backend.Language "go"}}
+```bash
+cd apps/api
+go test ./...
+go vet ./...
+go build -o bin/api ./cmd/api
+```
+{{else if eq .Stack.Backend.Framework "nestjs"}}
+```bash
+cd apps/api
+npm install
+npm run start:dev
+npm test
+npm run build
+```
+{{end}}
+{{end}}
+
+{{if eq .AppType "frontend"}}
+```bash
+cd apps/web
+npm install
+npm run dev
+npm test
+npm run build
+```
+{{end}}
+
+## See Also
+
+- Root [AGENTS.md](../../AGENTS.md)
+- [Architecture](../../docs/architecture/ARCHITECTURE.md)
+- [Coding Standards](../../docs/engineering/CODING_STANDARDS.md)

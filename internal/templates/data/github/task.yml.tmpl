@@ -1,0 +1,40 @@
+name: Task
+description: General development task
+title: ""
+labels:
+  - type:task
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What needs to be done?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - backend
+        - frontend
+        - infra
+        - docs
+        - agents
+    validations:
+      required: true
+  - type: dropdown
+    id: model
+    attributes:
+      label: Recommended Model
+      options:
+        - deepseek-v4-pro
+        - deepseek-v4-flash
+        - opencode/big-pickle
+        - opencode/minimax-m2.5-free
+        - opencode/ling-2.6-flash
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: How do we know this is done?

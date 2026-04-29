@@ -1,0 +1,65 @@
+# Architecture: {{.ProjectName}}
+
+## Overview
+
+<TODO: Describe the high-level architecture.>
+
+## System Components
+
+{{if .Features.Backend}}- **Backend API** ({{.Stack.Backend.Language}}/{{.Stack.Backend.Framework}}): Core business logic and API
+{{end}}{{if .Features.Frontend}}- **Frontend** ({{.Stack.Frontend.Framework}}): User interface
+{{end}}{{if .Features.Database}}- **Database** ({{.Stack.Database.Primary}}): Primary data store
+{{end}}{{if .Features.Cache}}- **Cache** ({{.Stack.Database.Cache}}): Performance cache
+{{end}}{{if .Features.Queue}}- **Message Queue** ({{.Stack.Messaging.Provider}}): Async processing
+{{end}}{{if .Features.Storage}}- **Object Storage** ({{.Stack.Database.ObjectStorage}}): File/blob storage
+{{end}}{{if .Features.Auth}}- **Auth** ({{.Stack.Auth.Provider}}): Authentication and authorization
+{{end}}{{if .Features.Gateway}}- **Gateway** ({{.Stack.Gateway.Provider}}): API Gateway
+{{end}}
+## Backend Architecture
+{{if .Features.Backend}}
+
+- Language: {{.Stack.Backend.Language}}
+- Framework: {{.Stack.Backend.Framework}}{{if .Stack.Backend.Router}}
+- Router: {{.Stack.Backend.Router}}{{end}}{{if .Stack.Backend.ORM}}
+- ORM: {{.Stack.Backend.ORM}}{{end}}{{if .Stack.Backend.APIContract}}
+- API Contract: {{.Stack.Backend.APIContract}}{{end}}
+- Architecture pattern: modular monolith.
+{{else}}
+Not applicable for this preset.
+{{end}}
+## Frontend Architecture
+{{if .Features.Frontend}}
+
+- Framework: {{.Stack.Frontend.Framework}}
+- Styling: {{.Stack.Frontend.Styling}}
+- Build Tool: {{.Stack.Frontend.BuildTool}}
+{{else}}
+Not applicable for this preset.
+{{end}}
+## Data Architecture
+{{if .Features.Database}}
+
+- Primary Database: {{.Stack.Database.Primary}}
+{{if .Stack.Database.Cache}}- Cache: {{.Stack.Database.Cache}}{{end}}
+{{if .Stack.Database.ObjectStorage}}- Object Storage: {{.Stack.Database.ObjectStorage}}{{end}}
+{{else}}
+Not applicable for this preset.
+{{end}}
+## Auth Architecture
+{{if .Features.Auth}}
+
+- Provider: {{.Stack.Auth.Provider}}
+- Protocol: {{.Stack.Auth.Protocol}}
+{{else}}
+Not applicable for this preset.
+{{end}}
+## Infrastructure Architecture
+{{if .Features.Docker}}
+
+- Containerization: Docker Compose (local), Kubernetes (production optional)
+{{end}}
+## Testing Architecture
+
+- Unit Tests: {{.Quality.Tests.Unit}}
+- Integration Tests: {{.Quality.Tests.Integration}}
+{{if .Quality.Tests.E2E}}- E2E Tests: {{.Quality.Tests.E2E}}{{end}}

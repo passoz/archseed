@@ -1,0 +1,47 @@
+name: tiny-web
+description: Small static web apps, calculators, viewers, landing pages and simple experiments.
+project:
+  type: web
+  maturity: small
+  repo: single
+features:
+  frontend: true
+  backend: false
+  database: false
+  cache: false
+  queue: false
+  storage: false
+  auth: false
+  gateway: false
+  docker: false
+  github: true
+  agents: true
+  observability: false
+stack:
+  backend:
+    language: ""
+    framework: ""
+    router: ""
+    orm: ""
+    validation: ""
+    api_contract: ""
+  frontend:
+    framework: vanilla
+    styling: css
+    build_tool: none
+  database:
+    primary: ""
+    cache: ""
+    object_storage: ""
+quality:
+  tests:
+    unit: optional
+    integration: optional
+    e2e: optional
+  ci:
+    provider: github-actions
+    required_checks:
+      - lint
+      - build
+agents:
+  enabled: true

@@ -1,0 +1,38 @@
+.PHONY: dev test lint build docker-up docker-down
+
+dev:
+	@echo "Starting development environment..."
+{{if .Features.Docker}}	docker compose up -d
+{{end}}
+{{if eq .Stack.Backend.Language "go"}}	cd apps/api && go run ./cmd/api &
+{{else if eq .Stack.Backend.Framework "nestjs"}}	cd apps/api && npm run start:dev &
+{{end}}
+{{if .Features.Frontend}}	cd apps/web && npm run dev &
+{{end}}
+	@echo "Dev environment ready."
+
+test:
+{{if eq .Stack.Backend.Language "go"}}	cd apps/api && go test ./...
+{{else if eq .Stack.Backend.Framework "nestjs"}}	cd apps/api && npm test
+{{end}}
+{{if .Features.Frontend}}	cd apps/web && npm test
+{{end}}
+lint:
+{{if eq .Stack.Backend.Language "go"}}	cd apps/api && golangci-lint run
+{{else if eq .Stack.Backend.Framework "nestjs"}}	cd apps/api && npm run lint
+{{end}}
+{{if .Features.Frontend}}	cd apps/web && npm run lint
+{{end}}
+build:
+{{if eq .Stack.Backend.Language "go"}}	cd apps/api && go build -o bin/api ./cmd/api
+{{else if eq .Stack.Backend.Framework "nestjs"}}	cd apps/api && npm run build
+{{end}}
+{{if .Features.Frontend}}	cd apps/web && npm run build
+{{end}}
+{{if .Features.Docker}}
+docker-up:
+	docker compose up -d
+
+docker-down:
+	docker compose down
+{{end}}

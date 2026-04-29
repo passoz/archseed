@@ -1,0 +1,48 @@
+# Testing Strategy: {{.ProjectName}}
+
+## Test Levels
+
+### Unit Tests ({{.Quality.Tests.Unit}})
+{{if eq .Quality.Tests.Unit "required"}}
+
+- Every business rule must have unit tests.
+- Every pure function must be tested.
+- Mock external dependencies.
+- Aim for fast execution (< 5s for full suite).
+{{else}}
+- Unit tests are optional but recommended for business logic.
+{{end}}
+### Integration Tests ({{.Quality.Tests.Integration}})
+{{if eq .Quality.Tests.Integration "required"}}
+
+- Database operations must have integration tests.
+- API endpoints must have contract tests.
+- Use test containers or in-memory alternatives where possible.
+{{else}}
+- Integration tests are recommended for database and API layers.
+{{end}}
+{{if .Quality.Tests.E2E}}
+### E2E Tests ({{.Quality.Tests.E2E}})
+
+- Main user flows should have E2E tests.
+- Keep E2E tests focused on critical paths.
+- Use dedicated test environment.
+{{end}}
+## CI Requirements
+
+- Provider: {{.Quality.CI.Provider}}
+- Required checks: lint, test, build{{if .Features.Docker}}, docker-build{{end}}
+- Tests run on every PR and push to main.
+
+## Coverage Expectations
+{{if .Features.Backend}}
+- Backend: {{if and .Quality.Coverage .Quality.Coverage.MinimumBackend}}{{.Quality.Coverage.MinimumBackend}}%{{else}}as high as practical{{end}}
+{{end}}
+{{if .Features.Frontend}}
+- Frontend: {{if and .Quality.Coverage .Quality.Coverage.MinimumFrontend}}{{.Quality.Coverage.MinimumFrontend}}%{{else}}as high as practical{{end}}
+{{end}}
+## Running Tests
+
+```bash
+make test
+```

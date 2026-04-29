@@ -1,0 +1,79 @@
+# AGENTS.md
+
+## Project Mission
+
+{{.Description}}
+
+## Non-Negotiable Rules
+
+- Never alter architectural decisions recorded in ADRs without creating a new ADR.
+- Never remove tests just to make CI pass.
+- Never introduce heavy dependencies without justification.
+- Never change the stack without updating project.kernel.yaml.
+{{if .Stack.Backend.APIContract}}- Never change API contracts without updating documentation and tests.{{end}}
+- Never commit secrets.
+- Never create dead code, fake mocks or placeholder behavior in critical flows.
+
+## Required Workflow
+
+1. Read README.md.
+2. Read project.kernel.yaml.
+3. Read ADRs relevant to your task.
+4. Read the issue/task.
+5. Create a plan before altering code.
+6. Implement in small steps.
+7. Run tests.
+8. Update documentation if needed.
+9. Explain changes made.
+
+## Commands
+
+```bash
+{{if .Features.Docker}}make docker-up
+make docker-down
+{{end}}make dev
+make test
+make lint
+make build
+```
+
+## Architecture Rules
+{{if .Features.Backend}}
+- Backend follows modular architecture.
+- Domain does not depend on infrastructure.
+- HTTP handlers do not contain business rules.
+- Repositories do not return HTTP models.
+- Errors must be typed and logged.
+- Every new feature must have tests.
+{{end}}
+{{if .Features.Frontend}}
+- Components must be reusable and tested.
+- State management must be explicit.
+- No inline styles without justification.
+{{end}}
+
+## Testing Rules
+
+- Business rules require unit tests.
+- Database integration requires integration tests.
+- Critical routes require API tests.
+{{if eq .Quality.Tests.E2E "required"}}- Main flows require e2e tests.{{end}}
+
+## Documentation Rules
+
+- Architecture changes require ADR.
+{{if .Stack.Backend.APIContract}}- Endpoint changes require OpenAPI updates.{{end}}
+- Environment variable changes require .env.example update.
+- Infrastructure changes require docs/engineering update.
+
+## Model Routing
+
+{{if .Agents.Enabled}}
+- Use {{.Agents.DefaultModelStrategy.ReasoningHeavy}} for hard decisions and architectural review.
+- Use {{.Agents.DefaultModelStrategy.ComplexCoding}} for heavy coding.
+- Use {{.Agents.DefaultModelStrategy.MediumCoding}} for medium complexity.
+- Use {{.Agents.DefaultModelStrategy.FrontendLowMedium}} for frontend and adjustments.
+- Use {{.Agents.DefaultModelStrategy.FileOps}} for file creation, renames and mechanical tasks.
+{{else}}
+- Define model routing in project.kernel.yaml agents section.
+{{end}}

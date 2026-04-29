@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      {{if eq .Stack.Backend.Language "go"}}
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      - name: Lint
+        run: cd apps/api && go vet ./...
+
+      - name: Test
+        run: cd apps/api && go test ./...
+
+      - name: Build
+        run: cd apps/api && go build -o /dev/null ./cmd/api
+      {{end}}
+
+      {{if eq .Stack.Backend.Framework "nestjs"}}
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: cd apps/api && npm ci
+
+      - name: Lint
+        run: cd apps/api && npm run lint
+
+      - name: Test
+        run: cd apps/api && npm test
+
+      - name: Build
+        run: cd apps/api && npm run build
+      {{end}}
+
+      {{if .Features.Frontend}}
+      {{if ne .Stack.Frontend.BuildTool "none"}}
+      - name: Setup Node (Frontend)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install frontend dependencies
+        run: cd apps/web && npm ci
+
+      - name: Lint
+        run: cd apps/web && npm run lint
+
+      - name: Test
+        run: cd apps/web && npm test
+
+      - name: Build
+        run: cd apps/web && npm run build
+      {{end}}
+      {{end}}

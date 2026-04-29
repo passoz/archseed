@@ -1,0 +1,64 @@
+project:
+  name: {{.ProjectName}}
+  type: {{.ProjectType}}
+  maturity: production
+  repo: monorepo
+  default_language: en
+
+product:
+  domain: "<TODO: describe>"
+  users:
+    - admin
+    - user
+  monetization:
+    enabled: false
+    methods: []
+
+architecture:
+  style: modular-monolith
+  backend:
+    language: {{.Stack.Backend.Language}}
+    framework: {{.Stack.Backend.Framework}}{{if .Stack.Backend.Router}}
+    router: {{.Stack.Backend.Router}}{{end}}{{if .Stack.Backend.ORM}}
+    orm: {{.Stack.Backend.ORM}}{{end}}{{if .Stack.Backend.Validation}}
+    validation: {{.Stack.Backend.Validation}}{{end}}{{if .Stack.Backend.APIContract}}
+    api_contract: {{.Stack.Backend.APIContract}}{{end}}
+  frontend:
+    framework: {{.Stack.Frontend.Framework}}
+    styling: {{.Stack.Frontend.Styling}}
+    build_tool: {{.Stack.Frontend.BuildTool}}
+  database:
+    primary: {{.Stack.Database.Primary}}{{if .Stack.Database.Cache}}
+    cache: {{.Stack.Database.Cache}}{{end}}{{if .Stack.Database.ObjectStorage}}
+    object_storage: {{.Stack.Database.ObjectStorage}}{{end}}{{if .Features.Auth}}
+  auth:
+    provider: {{.Stack.Auth.Provider}}
+    protocol: {{.Stack.Auth.Protocol}}{{end}}{{if .Features.Queue}}
+  messaging:
+    provider: {{.Stack.Messaging.Provider}}{{end}}{{if .Features.Gateway}}
+  gateway:
+    provider: {{.Stack.Gateway.Provider}}{{end}}
+
+quality:
+  tests:
+    unit: {{.Quality.Tests.Unit}}
+    integration: {{.Quality.Tests.Integration}}{{if .Quality.Tests.E2E}}
+    e2e: {{.Quality.Tests.E2E}}{{end}}
+  ci:
+    provider: {{.Quality.CI.Provider}}
+    required_checks:
+      - lint
+      - test
+      - build{{if .Features.Docker}}
+      - docker-build{{end}}
+
+agents:
+  default_model_strategy:
+    reasoning_heavy: deepseek-v4-pro
+    complex_coding: deepseek-v4-flash
+    medium_coding: opencode/big-pickle
+    frontend_low_medium: opencode/minimax-m2.5-free
+    file_ops: opencode/big-pickle
+  require_plan_before_code: true
+  require_tests_for_changes: true
+  require_docs_update: true

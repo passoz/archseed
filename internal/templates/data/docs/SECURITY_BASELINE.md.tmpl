@@ -1,0 +1,53 @@
+# Security Baseline: {{.ProjectName}}
+
+## Principles
+
+- Security is everyone's responsibility.
+- Never trust user input.
+- Always encrypt sensitive data at rest and in transit.
+- Follow the principle of least privilege.
+
+## Secrets Management
+
+- Never commit secrets to the repository.
+- Use `.env` files for local development (git-ignored).
+- Use environment variables or secret managers in production.
+- Rotate secrets regularly.
+
+## Authentication & Authorization
+{{if .Features.Auth}}
+
+- Auth Provider: {{.Stack.Auth.Provider}}
+- Protocol: {{.Stack.Auth.Protocol}}
+- All protected endpoints must validate tokens.
+- Role-based access control must be enforced.
+{{else}}
+- Implement authentication early in development.
+- Use established OAuth2/OIDC providers.
+{{end}}
+## Data Protection
+
+- All database queries must use parameterized queries.
+- Never construct SQL by string concatenation.
+- Encrypt PII fields at rest.
+- Sanitize all user input before rendering.
+
+## API Security
+{{if .Features.Backend}}
+
+- Rate limit all public endpoints.
+- Validate request payloads against schemas.
+- Use HTTPS everywhere (enforce in production).
+- Set appropriate CORS policies.
+{{end}}
+## Dependency Management
+
+- Keep dependencies up to date.
+- Review dependency licenses.
+- Run vulnerability scans in CI.
+
+## Incident Response
+
+- Log all security-relevant events.
+- Set up alerts for suspicious activity.
+- Have a plan for disclosure and patching.

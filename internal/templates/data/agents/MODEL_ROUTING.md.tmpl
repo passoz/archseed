@@ -1,0 +1,35 @@
+# Model Routing: {{.ProjectName}}
+
+## Strategy
+
+This project uses different AI models for different types of tasks. Each task is assigned to the most appropriate model.
+
+## Model Assignments
+{{if .Agents.Enabled}}
+| Responsibility | Model |
+|---|---|
+| Hard architecture decisions | {{.Agents.DefaultModelStrategy.ReasoningHeavy}} |
+| Heavy/complex coding | {{.Agents.DefaultModelStrategy.ComplexCoding}} |
+| Medium complexity coding | {{.Agents.DefaultModelStrategy.MediumCoding}} |
+| Frontend and simple tasks | {{.Agents.DefaultModelStrategy.FrontendLowMedium}} |
+| File operations and mechanical tasks | {{.Agents.DefaultModelStrategy.FileOps}} |
+{{else}}
+Model routing not configured. Define in project.kernel.yaml > agents section.
+{{end}}
+## Task-to-Model Mapping
+
+| Task Type | Model | Examples |
+|---|---|---|
+| Architecture Design | reasoning-heavy | ADR creation, system design |
+| Core Backend Logic | complex-coding | Business rules, API implementation |
+| Middleware/Integration | medium-coding | Auth middleware, service integration |
+| UI Components | frontend-low-medium | React components, styling |
+| Scaffolding/Refactors | file-ops | File creation, renames, simple changes |
+
+## Usage
+
+When creating a task, use:
+
+```bash
+archseed agent generate --model <model> --title "task description"
+```

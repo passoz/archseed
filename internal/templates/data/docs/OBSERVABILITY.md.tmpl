@@ -1,0 +1,53 @@
+# Observability: {{.ProjectName}}
+
+## Principles
+
+- All services must emit structured logs.
+- All requests must be traceable across services.
+- Metrics must be collected for business and system health.
+
+## Logging
+
+- **Format**: Structured JSON logs.
+- **Levels**: debug, info, warn, error.
+- **Context**: Always include request ID, user ID (when available), and service name.
+
+## Metrics
+
+Recommended instruments:
+
+- **HTTP**: Request count, latency (p50/p95/p99), error rate.
+- **Database**: Connection pool usage, query latency, slow queries.
+- **Business**: Key business domain metrics (user signups, orders, etc.).
+- **System**: CPU, memory, goroutines (Go), event loop lag (Node).
+
+## Tracing
+
+- Use distributed tracing across service boundaries.
+- Propagate trace context via headers.
+- Sample at minimum 1-5% in production.
+
+## Stack Recommendations
+
+- **Log aggregation**: ELK (Elasticsearch, Logstash, Kibana) or Grafana Loki.
+- **Metrics**: Prometheus + Grafana.
+- **Tracing**: OpenTelemetry + Jaeger.
+- **Health Checks**: Every service must expose `/health` and `/ready`.
+
+## Setup
+
+For local development, the Docker Compose setup includes:
+
+- Prometheus for metrics collection
+- Grafana for dashboards
+- Loki for log aggregation
+- Jaeger for distributed tracing
+
+## Alerts
+
+Define alerts for:
+
+- Service unavailable (health check failure)
+- High error rate (> 1% of requests)
+- P99 latency exceeds threshold
+- Database connection pool exhaustion

@@ -1,0 +1,77 @@
+name: legaltech-production
+description: Brazilian legaltech projects, court automation, process tracking, PDF storage, workers and auditability.
+project:
+  type: legaltech
+  maturity: production
+  repo: monorepo
+features:
+  frontend: true
+  backend: true
+  database: true
+  cache: true
+  queue: true
+  storage: true
+  auth: true
+  gateway: false
+  workers: true
+  audit_log: true
+  docker: true
+  github: true
+  agents: true
+  observability: false
+stack:
+  backend:
+    language: go
+    framework: net-http
+    router: chi
+    orm: ent
+    validation: go-playground-validator
+    api_contract: openapi
+  frontend:
+    framework: react
+    styling: tailwind
+    build_tool: vite
+  database:
+    primary: postgres
+    cache: redis
+    object_storage: minio
+  auth:
+    provider: keycloak
+    protocol: oidc
+  messaging:
+    provider: rabbitmq
+  workers:
+    enabled: true
+    use_cases:
+      - scraping
+      - document-processing
+      - background-jobs
+  domain:
+    concepts:
+      - process
+      - party
+      - court
+      - movement
+      - document
+      - deadline
+      - hearing
+quality:
+  tests:
+    unit: required
+    integration: required
+    e2e: recommended
+  ci:
+    provider: github-actions
+    required_checks:
+      - lint
+      - test
+      - build
+      - docker-build
+agents:
+  enabled: true
+  default_model_strategy:
+    reasoning_heavy: deepseek-v4-pro
+    complex_coding: deepseek-v4-flash
+    medium_coding: opencode/big-pickle
+    frontend_low_medium: opencode/minimax-m2.5-free
+    file_ops: opencode/big-pickle

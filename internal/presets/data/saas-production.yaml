@@ -1,0 +1,65 @@
+name: saas-production
+description: Ambitious SaaS project with production-oriented infrastructure.
+project:
+  type: saas
+  maturity: production
+  repo: monorepo
+features:
+  frontend: true
+  backend: true
+  database: true
+  cache: true
+  queue: true
+  storage: true
+  auth: true
+  gateway: true
+  docker: true
+  github: true
+  agents: true
+  observability: true
+stack:
+  backend:
+    language: go
+    framework: net-http
+    router: chi
+    orm: ent
+    validation: go-playground-validator
+    api_contract: openapi
+  frontend:
+    framework: react
+    styling: tailwind
+    build_tool: vite
+  database:
+    primary: postgres
+    cache: redis
+    object_storage: minio
+  auth:
+    provider: keycloak
+    protocol: oidc
+  messaging:
+    provider: rabbitmq
+  gateway:
+    provider: apisix
+  observability:
+    logs: structured
+    stack: elk-or-loki
+quality:
+  tests:
+    unit: required
+    integration: required
+    e2e: recommended
+  ci:
+    provider: github-actions
+    required_checks:
+      - lint
+      - test
+      - build
+      - docker-build
+agents:
+  enabled: true
+  default_model_strategy:
+    reasoning_heavy: deepseek-v4-pro
+    complex_coding: deepseek-v4-flash
+    medium_coding: opencode/big-pickle
+    frontend_low_medium: opencode/minimax-m2.5-free
+    file_ops: opencode/big-pickle

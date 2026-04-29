@@ -1,0 +1,42 @@
+# {{.ProjectName}}
+
+{{.Description}}
+
+## Status
+
+🚧 Under Development
+
+## Stack
+
+{{if .Features.Backend}}- **Backend**: {{.Stack.Backend.Language}} / {{.Stack.Backend.Framework}}{{if .Stack.Backend.Router}} ({{.Stack.Backend.Router}}){{end}}{{end}}
+{{if .Features.Frontend}}- **Frontend**: {{.Stack.Frontend.Framework}} / {{.Stack.Frontend.Styling}} ({{.Stack.Frontend.BuildTool}}){{end}}
+{{if .Features.Database}}- **Database**: {{.Stack.Database.Primary}}{{if .Stack.Database.Cache}}, cache: {{.Stack.Database.Cache}}{{end}}{{if .Stack.Database.ObjectStorage}}, storage: {{.Stack.Database.ObjectStorage}}{{end}}{{end}}
+{{if .Features.Auth}}- **Auth**: {{.Stack.Auth.Provider}} ({{.Stack.Auth.Protocol}}){{end}}
+
+## Quick Start
+
+```bash
+{{if .Features.Docker}}# Start all services
+make docker-up{{else}}# Start development
+make dev{{end}}
+
+# Run tests
+make test
+
+# Build
+make build
+```
+
+## Documentation
+
+- [Product Requirements](docs/product/PRD.md)
+- [Architecture](docs/architecture/ARCHITECTURE.md)
+- [Architecture Decisions](docs/adr/)
+- [Engineering Standards](docs/engineering/)
+- [Roadmap](docs/roadmap/ROADMAP.md)
+
+## Agent Workflow
+
+This project uses AI agents for development. See [AGENTS.md](AGENTS.md) for rules and workflow.
+
+Generated with [archseed](https://github.com/passoz/archseed).

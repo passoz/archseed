@@ -1,0 +1,40 @@
+# Coding Standards: {{.ProjectName}}
+
+## General Principles
+
+- Write simple, readable code.
+- Follow idiomatic patterns for the language.
+- Prefer standard library over external dependencies.
+- Keep functions small and focused.
+- Use meaningful names.
+
+## Backend Standards ({{.Stack.Backend.Language}})
+{{if .Features.Backend}}
+
+- Follow effective Go guidelines.
+- Use dependency injection for testability.
+- Keep HTTP handlers thin — delegate to service layer.
+- Return typed errors, not panics.
+- Log structured errors with context.
+- Every exported function should be documented.
+{{else}}
+Not applicable.
+{{end}}
+## Frontend Standards ({{.Stack.Frontend.Framework}})
+{{if .Features.Frontend}}
+
+- Use functional components.
+- Keep components focused on a single responsibility.
+- Extract business logic into hooks or services.
+- Write accessible HTML.
+- Test components at integration level.
+{{else}}
+Not applicable.
+{{end}}
+## General Rules
+
+- No commented-out code in main branch.
+- No TODO without a tracking issue.
+- No magic numbers — use named constants.
+- Code reviews are mandatory before merge.
+- CI must pass before merge.

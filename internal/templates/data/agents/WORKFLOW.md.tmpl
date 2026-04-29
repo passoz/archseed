@@ -1,0 +1,56 @@
+# Agent Workflow: {{.ProjectName}}
+
+## Overview
+
+This document describes the workflow AI agents must follow when contributing to this project.
+
+## Step-by-Step Flow
+
+1. **Read Context**
+   - README.md — understand the project
+   - AGENTS.md — understand the rules
+   - project.kernel.yaml — understand the decisions
+   - Relevant ADRs — understand past decisions
+
+2. **Understand the Task**
+   - Read the GitHub Issue
+   - Check acceptance criteria
+   - Identify affected files and modules
+
+3. **Plan**
+   - Create a plan before writing code
+   - Identify dependencies and risks
+   - Break down the task into small steps
+
+4. **Implement**
+   - Write code following coding standards
+   - Add tests as required
+   - Keep changes minimal and focused
+   - Never change architectural decisions without ADR
+
+5. **Verify**
+   - Run tests: `make test`
+   - Run lint: `make lint`
+   - Build: `make build`
+
+6. **Document**
+   - Update relevant documentation
+   - Create ADR for architectural changes
+   - Update OpenAPI if endpoints changed
+
+7. **Submit**
+   - Create a PR following the PR template
+   - Link the related issue
+   - Explain what was done and why
+
+## Rules for Branching
+
+- Feature: `feat/issue-NNN-short-description`
+- Bug fix: `fix/issue-NNN-short-description`
+- Refactor: `refactor/short-description`
+
+## Rules for Commit Messages
+
+- Use conventional commits
+- Format: `type(scope): description`
+- Types: feat, fix, refactor, docs, test, chore

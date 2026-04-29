@@ -1,0 +1,77 @@
+# ADR 0001: Initial Architecture
+
+## Status
+
+Accepted
+
+## Context
+
+This project was initialized using archseed with the following stack decisions. This ADR records the architectural foundation and the rationale behind each choice.
+
+## Decisions
+
+{{if .Features.Backend}}
+### Backend: {{.Stack.Backend.Language}} / {{.Stack.Backend.Framework}}{{if .Stack.Backend.Router}} ({{.Stack.Backend.Router}}){{end}}
+
+- **Language**: {{if eq .Stack.Backend.Language "go"}}Go 1.26+ — strong typing, excellent standard library, fast compilation, built-in concurrency, and single-binary deployment. Ideal for API services and microservices.{{else if eq .Stack.Backend.Framework "nestjs"}}TypeScript with NestJS — mature ecosystem, dependency injection out of the box, decorator-based controllers, and strong typing for large-scale applications.{{end}}
+{{if .Stack.Backend.Router}}- **Router**: {{.Stack.Backend.Router}} — lightweight, idiomatic, and performant HTTP routing.{{end}}{{if .Stack.Backend.ORM}}
+- **ORM**: {{.Stack.Backend.ORM}} — type-safe database access with schema migration support.{{end}}{{if .Stack.Backend.APIContract}}
+- **API Contract**: {{.Stack.Backend.APIContract}} — language-agnostic contract definition enabling client generation and documentation automation.{{end}}
+{{end}}
+{{if .Features.Frontend}}
+### Frontend: {{.Stack.Frontend.Framework}} / {{.Stack.Frontend.Styling}} ({{.Stack.Frontend.BuildTool}})
+
+{{if eq .Stack.Frontend.Framework "react"}}- **Framework**: React — component-based UI, large ecosystem, and widespread tooling support.{{else if eq .Stack.Frontend.Framework "next"}}- **Framework**: Next.js — React-based full-stack framework with SSR, file-based routing, and optimized builds.{{else if eq .Stack.Frontend.Framework "remix"}}- **Framework**: Remix — React-based framework focused on web standards, nested routing, and progressive enhancement.{{else}}- **Framework**: Vanilla JS — minimal dependencies, suitable for simple static interfaces.{{end}}
+{{if ne .Stack.Frontend.Styling "css"}}- **Styling**: {{.Stack.Frontend.Styling}} — utility-first CSS framework for rapid and consistent UI development.{{else}}- **Styling**: Plain CSS — zero dependencies, full control over styles.{{end}}
+{{if ne .Stack.Frontend.BuildTool "none"}}- **Build Tool**: {{.Stack.Frontend.BuildTool}}{{end}}
+{{end}}
+{{if .Features.Database}}
+### Database: {{.Stack.Database.Primary}}
+
+{{if eq .Stack.Database.Primary "postgres"}}- **PostgreSQL** — mature relational database with strong ACID compliance, JSON support, and excellent ecosystem of extensions. Chosen for reliability, performance, and production readiness.{{else if eq .Stack.Database.Primary "mysql"}}- **MySQL** — widely adopted relational database with strong performance, replication support, and broad hosting compatibility.{{else if eq .Stack.Database.Primary "sqlite"}}- **SQLite** — embedded, serverless database. Ideal for local development, single-user applications, and scenarios where zero configuration is preferred.{{end}}
+{{if .Stack.Database.Cache}}
+- **Cache**: {{.Stack.Database.Cache}} — in-memory data store for high-throughput reads and session management.{{end}}
+{{if .Stack.Database.ObjectStorage}}
+- **Object Storage**: {{.Stack.Database.ObjectStorage}} — S3-compatible object storage for file and blob data.{{end}}
+{{end}}
+{{if .Features.Auth}}
+### Authentication: {{.Stack.Auth.Provider}} ({{.Stack.Auth.Protocol}})
+
+- **Provider**: {{.Stack.Auth.Provider}} — open-source identity and access management solution.
+- **Protocol**: {{.Stack.Auth.Protocol}} — industry-standard protocol for delegated authentication.
+{{end}}
+{{if .Features.Queue}}
+### Message Queue: {{.Stack.Messaging.Provider}}
+
+- Reliable message broker for async processing, event-driven workflows, and service decoupling.
+{{end}}
+{{if .Features.Observability}}
+### Observability
+
+- Structured logging, metrics collection (Prometheus), and distributed tracing (OpenTelemetry) for production monitoring and debugging.
+{{end}}
+### CI/CD
+
+- **Provider**: {{.Quality.CI.Provider}}
+- **Required checks**: {{if .Quality.CI.RequiredChecks}}{{range $i, $c := .Quality.CI.RequiredChecks}}{{if $i}}, {{end}}{{$c}}{{end}}{{else}}lint, test, build{{end}}
+
+## Consequences
+
+### Positive
+
+- {{if .Features.Backend}}Consistent backend architecture that is familiar to Go/TypeScript developers{{end}}{{if and .Features.Backend .Features.Frontend}} and{{end}}{{if .Features.Frontend}} component-based frontend with modern tooling{{end}}.
+- Documented stack decisions reduce onboarding time for new developers and AI agents.
+- CI/CD pipeline ensures code quality and prevents regressions.
+- The monorepo structure simplifies dependency management and cross-team collaboration.
+
+### Negative
+
+- Stack migration becomes a documented process requiring a new ADR.
+- Teams must follow the established architecture patterns unless a new ADR justifies changes.
+- Initial setup time is higher than ad-hoc approaches, but this investment pays back in consistency.
+
+## Alternatives Considered
+
+{{if .Features.Backend}}{{if eq .Stack.Backend.Language "go"}}- **Node.js/Express**: Rejected in favor of Go for better performance, simpler deployment, and stronger typing.{{end}}{{if eq .Stack.Backend.Framework "nestjs"}}- **Go/Chi or Go/net-http**: Rejected in favor of NestJS for teams more familiar with TypeScript and the Node.js ecosystem.{{end}}{{end}}
+{{if .Features.Frontend}}{{if eq .Stack.Frontend.Framework "react"}}- **Next.js**: Offers SSR out of the box but introduces additional complexity. React with Vite was chosen for simpler client-side rendering needs.{{end}}{{if eq .Stack.Frontend.Framework "vanilla"}}- **React/Vue**: Rejected to keep the stack minimal and dependency-free for this project's requirements.{{end}}{{end}}
+{{if eq .Stack.Database.Primary "postgres"}}- **MySQL**: Comparable feature set; PostgreSQL was preferred for superior JSON support, indexing, and extension ecosystem.{{else if eq .Stack.Database.Primary "mysql"}}- **PostgreSQL**: Comparable feature set; MySQL was preferred for wider hosting support and simpler operational experience.{{else if eq .Stack.Database.Primary "sqlite"}}- **PostgreSQL/MySQL**: Rejected due to operational overhead — SQLite is sufficient for the project's data needs and eliminates database server management.{{end}}

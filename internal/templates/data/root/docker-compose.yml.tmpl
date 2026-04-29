@@ -1,0 +1,87 @@
+version: "3.9"
+
+services:
+{{if eq .Stack.Database.Primary "postgres"}}
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: {{.ProjectName}}
+      POSTGRES_PASSWORD: {{.ProjectName}}
+      POSTGRES_DB: {{.ProjectName}}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+{{else if eq .Stack.Database.Primary "mysql"}}
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: {{.ProjectName}}
+      MYSQL_USER: {{.ProjectName}}
+      MYSQL_PASSWORD: {{.ProjectName}}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysqldata:/var/lib/mysql
+{{end}}
+{{if .Features.Cache}}
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+{{end}}
+{{if .Features.Queue}}
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+{{end}}
+{{if .Features.Storage}}
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - miniodata:/data
+{{end}}
+{{if .Features.Auth}}
+  keycloak:
+    image: quay.io/keycloak/keycloak:25
+    ports:
+      - "8080:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    command: start-dev
+{{end}}
+{{if .Features.Gateway}}
+  apisix:
+    image: apache/apisix:3-debian
+    ports:
+      - "9080:9080"
+      - "9180:9180"
+{{end}}
+{{if .Features.Backend}}
+  api:
+    build:
+      context: ./apps/api
+    ports:
+      - "3000:3000"
+    environment:
+      APP_ENV: development
+{{end}}
+{{if or (eq .Stack.Database.Primary "postgres") (eq .Stack.Database.Primary "mysql")}}
+volumes:
+  {{if eq .Stack.Database.Primary "postgres"}}pgdata:{{end}}
+  {{if eq .Stack.Database.Primary "mysql"}}mysqldata:{{end}}
+{{end}}
+{{if .Features.Storage}}
+  miniodata:
+{{end}}

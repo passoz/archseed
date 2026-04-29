@@ -1,0 +1,53 @@
+name: Agent Task
+description: Task to be executed by an AI agent
+title: ""
+labels:
+  - type:task
+  - agent-pending
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should the agent accomplish?
+    validations:
+      required: true
+  - type: dropdown
+    id: model
+    attributes:
+      label: Recommended Model
+      options:
+        - deepseek-v4-pro
+        - deepseek-v4-flash
+        - opencode/big-pickle
+        - opencode/minimax-m2.5-free
+        - opencode/ling-2.6-flash
+    validations:
+      required: true
+  - type: textarea
+    id: context_files
+    attributes:
+      label: Context Files to Read First
+      description: List files the agent must read before starting.
+      value: |
+        - README.md
+        - AGENTS.md
+        - project.kernel.yaml
+        - docs/architecture/ARCHITECTURE.md
+  - type: textarea
+    id: allowed_files
+    attributes:
+      label: Allowed Files/Directories
+      description: Files that may be modified.
+  - type: textarea
+    id: forbidden_files
+    attributes:
+      label: Forbidden Files
+      description: Files that must not be modified.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: How do we know the task is complete?
+    validations:
+      required: true

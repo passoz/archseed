@@ -1,0 +1,48 @@
+name: solo-mvp
+description: A real MVP made by one developer, with simple but solid structure.
+project:
+  type: app
+  maturity: mvp
+  repo: monorepo
+features:
+  frontend: true
+  backend: true
+  database: true
+  cache: false
+  queue: false
+  storage: false
+  auth: false
+  gateway: false
+  docker: true
+  github: true
+  agents: true
+  observability: false
+stack:
+  backend:
+    language: go
+    framework: net-http
+    router: chi
+    orm: ""
+    validation: ""
+    api_contract: ""
+  frontend:
+    framework: react
+    styling: tailwind
+    build_tool: vite
+  database:
+    primary: postgres
+    cache: ""
+    object_storage: ""
+quality:
+  tests:
+    unit: required
+    integration: recommended
+    e2e: optional
+  ci:
+    provider: github-actions
+    required_checks:
+      - lint
+      - test
+      - build
+agents:
+  enabled: true
