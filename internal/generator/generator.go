@@ -139,12 +139,12 @@ func buildFileList(preset *config.PresetConfig) []fileSpec {
 		{template: "github/pull_request_template.md", path: ".github/pull_request_template.md", required: preset.Features.GitHub},
 		{template: "github/ci.yml", path: ".github/workflows/ci.yml", required: preset.Features.GitHub},
 		{template: "kernel/tracking.seed.yaml", path: ".kernel/tracking.seed.yaml", required: true},
+		{template: "root/.env.example", path: ".env.example", required: false},
 	}
 
 	if preset.Features.Docker {
 		files = append(files, fileSpec{template: "root/docker-compose.yml", path: "docker-compose.yml", required: true})
 		files = append(files, fileSpec{template: "root/Makefile", path: "Makefile", required: true})
-		files = append(files, fileSpec{template: "root/.env.example", path: ".env.example", required: true})
 	}
 
 	if preset.Features.Observability {

@@ -24,6 +24,25 @@ services:
       - "3306:3306"
     volumes:
       - mysqldata:/var/lib/mysql
+{{else if eq .Stack.Database.Primary "mongodb"}}
+  mongodb:
+    image: mongo:7
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: {{.ProjectName}}
+      MONGO_INITDB_ROOT_PASSWORD: {{.ProjectName}}
+      MONGO_INITDB_DATABASE: {{.ProjectName}}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+{{else if eq .Stack.Database.Primary "dynamodb"}}
+  dynamodb:
+    image: amazon/dynamodb-local:latest
+    ports:
+      - "8000:8000"
+    command: -jar DynamoDBLocal.jar -sharedDb -dbPath /data
+    volumes:
+      - dynamodata:/data
 {{end}}
 {{if .Features.Cache}}
   redis:
@@ -77,10 +96,12 @@ services:
     environment:
       APP_ENV: development
 {{end}}
-{{if or (eq .Stack.Database.Primary "postgres") (eq .Stack.Database.Primary "mysql")}}
+{{if or (eq .Stack.Database.Primary "postgres") (eq .Stack.Database.Primary "mysql") (eq .Stack.Database.Primary "mongodb") (eq .Stack.Database.Primary "dynamodb")}}
 volumes:
   {{if eq .Stack.Database.Primary "postgres"}}pgdata:{{end}}
   {{if eq .Stack.Database.Primary "mysql"}}mysqldata:{{end}}
+  {{if eq .Stack.Database.Primary "mongodb"}}mongodata:{{end}}
+  {{if eq .Stack.Database.Primary "dynamodb"}}dynamodata:{{end}}
 {{end}}
 {{if .Features.Storage}}
   miniodata:

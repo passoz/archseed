@@ -49,8 +49,10 @@ func RunGuided(projectName string, force bool) error {
 	}
 
 	if hasAny {
-		fmt.Printf("  Docker:   %v\n", cfg.Features.Docker)
-		fmt.Printf("  Auth:     %v\n", cfg.Features.Auth)
+		fmt.Printf("  Deploy:   %s\n", map[bool]string{true: "Container", false: "Serverless"}[cfg.Features.Docker])
+		fmt.Printf("  Auth:     %s\n", map[string]string{
+			"": "None", "keycloak": "Keycloak (OIDC)", "custom": "Own auth (backend + frontend)",
+		}[cfg.Stack.Auth.Provider])
 		fmt.Printf("  CI:       %v\n", cfg.Features.GitHub)
 		fmt.Printf("  Agents:   %v\n", cfg.Features.Agents)
 		fmt.Printf("  Observability: %v\n", cfg.Features.Observability)
@@ -138,6 +140,8 @@ func askQuestions(projectName string) (*config.PresetConfig, string, error) {
 		"PostgreSQL",
 		"MySQL",
 		"SQLite",
+		"MongoDB",
+		"DynamoDB",
 		"None (no database)",
 	})
 	if err != nil {
@@ -147,8 +151,8 @@ func askQuestions(projectName string) (*config.PresetConfig, string, error) {
 	hasFeatures := backend != "None (no backend)" || frontend != "None (no frontend)" || database != "None (no database)"
 
 	observability := false
-	docker := false
-	auth := false
+	deployMode := "container"
+	authChoice := "none"
 	agents := false
 
 	if hasFeatures {
@@ -157,13 +161,20 @@ func askQuestions(projectName string) (*config.PresetConfig, string, error) {
 			return nil, "", err
 		}
 
-		docker, err = prompt.Confirm("Enable Docker Compose for local development?")
+		deployMode, err = prompt.Select("Deployment mode", []string{
+			"Container (Docker Compose)",
+			"Serverless",
+		})
 		if err != nil {
 			return nil, "", err
 		}
 
 		if backend != "None (no backend)" {
-			auth, err = prompt.Confirm("Enable authentication? (Keycloak OIDC)")
+			authChoice, err = prompt.Select("Authentication", []string{
+				"None",
+				"Keycloak (OIDC)",
+				"Own auth (backend + frontend)",
+			})
 			if err != nil {
 				return nil, "", err
 			}
@@ -184,7 +195,7 @@ func askQuestions(projectName string) (*config.PresetConfig, string, error) {
 		}
 	}
 
-	return buildConfig(projectName, backend, frontend, database, observability, docker, auth, agents), remoteURL, nil
+	return buildConfig(projectName, backend, frontend, database, observability, deployMode, authChoice, agents), remoteURL, nil
 }
 
 func buildBackendConfig(choice string) config.Stack {
@@ -265,6 +276,10 @@ func buildDatabaseConfig(choice string) config.DatabaseStack {
 		return config.DatabaseStack{Primary: "mysql"}
 	case "SQLite":
 		return config.DatabaseStack{Primary: "sqlite"}
+	case "MongoDB":
+		return config.DatabaseStack{Primary: "mongodb"}
+	case "DynamoDB":
+		return config.DatabaseStack{Primary: "dynamodb"}
 	default:
 		return config.DatabaseStack{Primary: ""}
 	}
@@ -273,7 +288,9 @@ func buildDatabaseConfig(choice string) config.DatabaseStack {
 func buildConfig(
 	projectName string,
 	backendChoice, frontendChoice, databaseChoice string,
-	observability, docker, auth, agents bool,
+	observability bool,
+	deployMode, authChoice string,
+	agents bool,
 ) *config.PresetConfig {
 	stack := buildBackendConfig(backendChoice)
 	frontendCfg := buildFrontendConfig(frontendChoice)
@@ -282,6 +299,8 @@ func buildConfig(
 	hasBackend := backendChoice != "None (no backend)"
 	hasFrontend := frontendChoice != "None (no frontend)"
 	hasDB := databaseChoice != "None (no database)"
+	hasAuth := authChoice != "None"
+	isContainer := deployMode == "Container (Docker Compose)"
 
 	stack.Frontend = frontendCfg
 	stack.Database = dbCfg
@@ -290,10 +309,10 @@ func buildConfig(
 		Frontend:      hasFrontend,
 		Backend:       hasBackend,
 		Database:      hasDB,
-		Docker:        docker,
+		Docker:        isContainer,
 		GitHub:        true,
 		Agents:        agents,
-		Auth:          auth,
+		Auth:          hasAuth,
 		Cache:         false,
 		Queue:         false,
 		Storage:       false,
@@ -301,10 +320,18 @@ func buildConfig(
 		Observability: observability,
 	}
 
-	if auth {
-		stack.Auth = config.AuthStack{
-			Provider: "keycloak",
-			Protocol: "oidc",
+	if hasAuth {
+		switch authChoice {
+		case "Keycloak (OIDC)":
+			stack.Auth = config.AuthStack{
+				Provider: "keycloak",
+				Protocol: "oidc",
+			}
+		case "Own auth (backend + frontend)":
+			stack.Auth = config.AuthStack{
+				Provider: "custom",
+				Protocol: "jwt",
+			}
 		}
 	}
 
@@ -335,7 +362,7 @@ func buildConfig(
 			RequiredChecks: []string{"lint", "test", "build"},
 		},
 	}
-	if docker {
+	if isContainer {
 		quality.CI.RequiredChecks = append(quality.CI.RequiredChecks, "docker-build")
 	}
 

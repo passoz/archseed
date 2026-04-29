@@ -8,8 +8,10 @@
 
 {{if .Features.Backend}}- **Backend API** ({{.Stack.Backend.Language}}/{{.Stack.Backend.Framework}}): Core business logic and API
 {{end}}{{if .Features.Frontend}}- **Frontend** ({{.Stack.Frontend.Framework}}): User interface
-{{end}}{{if .Features.Database}}- **Database** ({{.Stack.Database.Primary}}): Primary data store
-{{end}}{{if .Features.Cache}}- **Cache** ({{.Stack.Database.Cache}}): Performance cache
+{{end}}{{if .Features.Database}}{{if eq .Stack.Database.Primary "mongodb"}}- **Database** (MongoDB): NoSQL document database
+{{else if eq .Stack.Database.Primary "dynamodb"}}- **Database** (DynamoDB): NoSQL key-value/document database
+{{else}}- **Database** ({{.Stack.Database.Primary}}): Primary data store
+{{end}}{{end}}{{if .Features.Cache}}- **Cache** ({{.Stack.Database.Cache}}): Performance cache
 {{end}}{{if .Features.Queue}}- **Message Queue** ({{.Stack.Messaging.Provider}}): Async processing
 {{end}}{{if .Features.Storage}}- **Object Storage** ({{.Stack.Database.ObjectStorage}}): File/blob storage
 {{end}}{{if .Features.Auth}}- **Auth** ({{.Stack.Auth.Provider}}): Authentication and authorization
@@ -48,8 +50,14 @@ Not applicable for this preset.
 ## Auth Architecture
 {{if .Features.Auth}}
 
-- Provider: {{.Stack.Auth.Provider}}
-- Protocol: {{.Stack.Auth.Protocol}}
+{{if eq .Stack.Auth.Provider "custom"}}
+- **Provider**: Custom (own implementation)
+- **Protocol**: JWT (JSON Web Tokens)
+- Authentication is handled end-to-end: backend issues and validates JWTs, frontend stores and attaches tokens.
+{{else}}
+- **Provider**: {{.Stack.Auth.Provider}}
+- **Protocol**: {{.Stack.Auth.Protocol}}
+{{end}}
 {{else}}
 Not applicable for this preset.
 {{end}}

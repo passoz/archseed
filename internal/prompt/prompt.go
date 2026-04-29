@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+var reader = bufio.NewReader(os.Stdin)
+
 // Select presents a numbered list and returns the selected value.
 func Select(label string, items []string) (string, error) {
 	fmt.Println()
@@ -16,7 +18,6 @@ func Select(label string, items []string) (string, error) {
 		fmt.Printf("  %d. %s\n", i+1, item)
 	}
 
-	reader := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Printf("Enter number (1-%d): ", len(items))
 		input, err := reader.ReadString('\n')
@@ -39,7 +40,6 @@ func Select(label string, items []string) (string, error) {
 func Confirm(label string) (bool, error) {
 	fmt.Println()
 	fmt.Printf("== %s ==\n", label)
-	reader := bufio.NewReader(os.Stdin)
 
 	for {
 		fmt.Print("Enter y/n: ")
@@ -64,7 +64,6 @@ func Confirm(label string) (bool, error) {
 func Input(label string, validate func(string) error) (string, error) {
 	fmt.Println()
 	fmt.Printf("== %s ==\n", label)
-	reader := bufio.NewReader(os.Stdin)
 
 	for {
 		fmt.Print("> ")

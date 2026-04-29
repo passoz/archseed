@@ -28,17 +28,21 @@ This project was initialized using archseed with the following stack decisions. 
 {{if .Features.Database}}
 ### Database: {{.Stack.Database.Primary}}
 
-{{if eq .Stack.Database.Primary "postgres"}}- **PostgreSQL** — mature relational database with strong ACID compliance, JSON support, and excellent ecosystem of extensions. Chosen for reliability, performance, and production readiness.{{else if eq .Stack.Database.Primary "mysql"}}- **MySQL** — widely adopted relational database with strong performance, replication support, and broad hosting compatibility.{{else if eq .Stack.Database.Primary "sqlite"}}- **SQLite** — embedded, serverless database. Ideal for local development, single-user applications, and scenarios where zero configuration is preferred.{{end}}
+{{if eq .Stack.Database.Primary "postgres"}}- **PostgreSQL** — mature relational database with strong ACID compliance, JSON support, and excellent ecosystem of extensions. Chosen for reliability, performance, and production readiness.{{else if eq .Stack.Database.Primary "mysql"}}- **MySQL** — widely adopted relational database with strong performance, replication support, and broad hosting compatibility.{{else if eq .Stack.Database.Primary "sqlite"}}- **SQLite** — embedded, serverless database. Ideal for local development, single-user applications, and scenarios where zero configuration is preferred.{{else if eq .Stack.Database.Primary "mongodb"}}- **MongoDB** — document-oriented NoSQL database with flexible schema, horizontal scaling, and rich query language. Ideal for applications with evolving data models and rapid iteration.{{else if eq .Stack.Database.Primary "dynamodb"}}- **DynamoDB** — fully managed NoSQL key-value and document database with single-digit millisecond performance at any scale. Schema-less design with automatic partitioning and replication.{{end}}
 {{if .Stack.Database.Cache}}
 - **Cache**: {{.Stack.Database.Cache}} — in-memory data store for high-throughput reads and session management.{{end}}
 {{if .Stack.Database.ObjectStorage}}
 - **Object Storage**: {{.Stack.Database.ObjectStorage}} — S3-compatible object storage for file and blob data.{{end}}
 {{end}}
 {{if .Features.Auth}}
-### Authentication: {{.Stack.Auth.Provider}} ({{.Stack.Auth.Protocol}})
-
-- **Provider**: {{.Stack.Auth.Provider}} — open-source identity and access management solution.
-- **Protocol**: {{.Stack.Auth.Protocol}} — industry-standard protocol for delegated authentication.
+### Authentication
+{{if eq .Stack.Auth.Provider "custom"}}
+- **Provider**: Custom (JWT)
+- JWT-based authentication implemented end-to-end. Backend issues and validates tokens, frontend manages token storage and attachment to requests. No external identity provider required.
+{{else}}
+- **Provider**: {{.Stack.Auth.Provider}} ({{.Stack.Auth.Protocol}})
+- Industry-standard protocol for delegated authentication.
+{{end}}
 {{end}}
 {{if .Features.Queue}}
 ### Message Queue: {{.Stack.Messaging.Provider}}
@@ -74,4 +78,4 @@ This project was initialized using archseed with the following stack decisions. 
 
 {{if .Features.Backend}}{{if eq .Stack.Backend.Language "go"}}- **Node.js/Express**: Rejected in favor of Go for better performance, simpler deployment, and stronger typing.{{end}}{{if eq .Stack.Backend.Framework "nestjs"}}- **Go/Chi or Go/net-http**: Rejected in favor of NestJS for teams more familiar with TypeScript and the Node.js ecosystem.{{end}}{{end}}
 {{if .Features.Frontend}}{{if eq .Stack.Frontend.Framework "react"}}- **Next.js**: Offers SSR out of the box but introduces additional complexity. React with Vite was chosen for simpler client-side rendering needs.{{end}}{{if eq .Stack.Frontend.Framework "vanilla"}}- **React/Vue**: Rejected to keep the stack minimal and dependency-free for this project's requirements.{{end}}{{end}}
-{{if eq .Stack.Database.Primary "postgres"}}- **MySQL**: Comparable feature set; PostgreSQL was preferred for superior JSON support, indexing, and extension ecosystem.{{else if eq .Stack.Database.Primary "mysql"}}- **PostgreSQL**: Comparable feature set; MySQL was preferred for wider hosting support and simpler operational experience.{{else if eq .Stack.Database.Primary "sqlite"}}- **PostgreSQL/MySQL**: Rejected due to operational overhead — SQLite is sufficient for the project's data needs and eliminates database server management.{{end}}
+{{if eq .Stack.Database.Primary "postgres"}}- **MySQL**: Comparable feature set; PostgreSQL was preferred for superior JSON support, indexing, and extension ecosystem.{{else if eq .Stack.Database.Primary "mysql"}}- **PostgreSQL**: Comparable feature set; MySQL was preferred for wider hosting support and simpler operational experience.{{else if eq .Stack.Database.Primary "sqlite"}}- **PostgreSQL/MySQL**: Rejected due to operational overhead — SQLite is sufficient for the project's data needs and eliminates database server management.{{else if eq .Stack.Database.Primary "mongodb"}}- **PostgreSQL/MySQL**: Rejected in favor of MongoDB for flexible document schemas and simpler horizontal scaling needs.{{else if eq .Stack.Database.Primary "dynamodb"}}- **PostgreSQL/MongoDB**: Rejected in favor of DynamoDB for serverless compatibility and zero-operations scaling.{{end}}
