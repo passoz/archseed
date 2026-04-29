@@ -89,6 +89,26 @@ archseed preset show        # Show preset details
 archseed doctor             # Validate project structure
 archseed adr new            # Create an ADR
 archseed agent generate     # Generate agent task prompts
+archseed audit generate     # Generate structured audit/review prompts
+```
+
+## Audit Pipeline
+
+`archseed audit generate` creates structured review prompts for post-implementation auditing, following the pipeline:
+
+| Layer | Model | Focus |
+|---|---|---|
+| Code Review | GPT-5.3 Codex | Bugs, testes, regressões, refactors |
+| Architecture | GPT-5.4 | Segurança, edge cases, decisões arquiteturais |
+| Consistency | Gemini 2.5 Pro | Documentação, integração, contexto amplo |
+| Frontend | Gemini 2.5 Flash | UI, UX, componentes, acessibilidade |
+
+Each prompt uses the structured format: severity → file → explanation → scenario → fix → test.
+
+Filter a single layer with `--layer`:
+
+```bash
+archseed audit generate --layer architecture
 ```
 
 ## Philosophy
@@ -102,6 +122,7 @@ archseed agent generate     # Generate agent task prompts
 
 - [x] Core CLI with presets, init, doctor, ADR, agent tasks
 - [x] Interactive `--guided` mode (backend, frontend, database, observability)
+- [x] Audit pipeline with structured review prompts
 - [ ] GitHub Issues/Projects sync
 - [ ] Blueprint mode (`--from blueprint.yaml`)
 - [ ] `configure` and `regenerate` commands
