@@ -37,6 +37,9 @@ labels:
   - name: "area:agents"
     color: "bfdadc"
     description: "Agent configuration"
+  - name: "area:repo"
+    color: "d4c5f9"
+    description: "Repository-level changes"
   - name: "priority:p0"
     color: "b60205"
     description: "Critical priority"
@@ -49,6 +52,18 @@ labels:
   - name: "status:blocked"
     color: "000000"
     description: "Blocked by dependency"
+  - name: "agent:deepseek-v4-pro"
+    color: "5319e7"
+    description: "DeepSeek V4 Pro — reasoning, architecture, audit"
+  - name: "agent:deepseek-v4-flash"
+    color: "1d76db"
+    description: "DeepSeek V4 Flash — primary coding"
+  - name: "agent:big-pickle"
+    color: "bfd4f2"
+    description: "Big Pickle — file ops, mechanical tasks"
+  - name: "agent:minimax-m2.5-free"
+    color: "c5def5"
+    description: "MiniMax M2.5 Free — frontend, UI"
 
 issues:
   - title: "Create initial repository structure"
@@ -56,6 +71,7 @@ issues:
     labels:
       - "type:task"
       - "area:repo"
+      - "agent:big-pickle"
     body_template: "agent-task"
     acceptance:
       - "Directory structure created"
@@ -69,6 +85,7 @@ issues:
     labels:
       - "type:task"
       - "area:docs"
+      - "agent:deepseek-v4-pro"
     body_template: "agent-task"
     acceptance:
       - "ADR created"
@@ -80,6 +97,7 @@ issues:
     labels:
       - "type:task"
       - "area:infra"
+      - "agent:big-pickle"
     acceptance:
       - "CI workflow configured"
       - "Lint step runs"
@@ -91,6 +109,7 @@ issues:
     labels:
       - "type:task"
       - "area:infra"
+      - "agent:big-pickle"
     acceptance:
       - "docker compose up succeeds"
       - "All services start without errors"
@@ -100,6 +119,7 @@ issues:
     labels:
       - "type:feature"
       - "area:backend"
+      - "agent:deepseek-v4-flash"
     acceptance:
       - "Backend directory structure created"
       - "Router configured"
@@ -110,6 +130,7 @@ issues:
     labels:
       - "type:feature"
       - "area:frontend"
+      - "agent:minimax-m2.5-free"
     acceptance:
       - "Frontend directory structure created"
       - "Dev server starts"
@@ -120,6 +141,7 @@ issues:
     labels:
       - "type:chore"
       - "area:repo"
+      - "agent:big-pickle"
     acceptance:
       - "archseed doctor returns exit code 0"
       - "All required files present"

@@ -117,7 +117,7 @@ func detectModel(labels []string) string {
 			return "opencode/ling-2.6-flash"
 		}
 	}
-	return "gemini2.5-pro"
+	return "opencode/big-pickle"
 }
 
 func buildTaskMarkdown(title string, model string, acceptance []string, phase string) string {
@@ -167,8 +167,8 @@ func slugify(s string) string {
 	s = strings.ToLower(s)
 	var result strings.Builder
 	for _, r := range s {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == ' ' || r == '-' {
-			if r == ' ' {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == ' ' || r == '-' || r == '/' || r == '.' {
+			if r == ' ' || r == '/' || r == '.' {
 				result.WriteRune('-')
 			} else {
 				result.WriteRune(r)
