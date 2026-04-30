@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/passoz/archseed/internal/config"
 	"github.com/passoz/archseed/internal/prompt"
@@ -84,14 +85,28 @@ func RunGuided(projectName string, force bool) error {
 }
 
 func setupGitRemote(projectDir, remoteURL string) error {
+	// Validate remote URL before touching the directory.
+	if !isValidRemoteURL(remoteURL) {
+		return fmt.Errorf("invalid remote URL: %q (expected git@host:path or https://host/path)", remoteURL)
+	}
+
 	fmt.Println("\nConfiguring Git remote...")
+
+	confirmed, err := prompt.Confirm("Stage all generated files and create an initial commit?")
+	if err != nil {
+		return err
+	}
+	if !confirmed {
+		fmt.Println("Skipping Git setup. You can configure it manually later.")
+		return nil
+	}
 
 	cmds := []struct {
 		dir string
 		cmd []string
 		msg string
 	}{
-		{projectDir, []string{"git", "init"}, "Git repository initialized"},
+		{projectDir, []string{"git", "init", "-b", "main"}, "Git repository initialized (branch: main)"},
 		{projectDir, []string{"git", "remote", "add", "origin", remoteURL}, "Remote 'origin' added"},
 		{projectDir, []string{"git", "add", "-A"}, "Files staged"},
 		{projectDir, []string{"git", "commit", "-m", "chore: initial bootstrap from archseed"}, "Initial commit created"},
@@ -112,6 +127,17 @@ func setupGitRemote(projectDir, remoteURL string) error {
 	return nil
 }
 
+// isValidRemoteURL performs basic validation on Git remote URLs.
+func isValidRemoteURL(url string) bool {
+	if url == "" {
+		return false
+	}
+	// Accept: git@host:path (SSH), https://host/path, ssh://git@host/path
+	return strings.HasPrefix(url, "git@") ||
+		strings.HasPrefix(url, "https://") ||
+		strings.HasPrefix(url, "ssh://")
+}
+
 func askQuestions(projectName string) (*config.PresetConfig, string, error) {
 	backend, err := prompt.Select("Choose your backend", []string{
 		"Go (1.26+)",
@@ -130,10 +156,19 @@ func askQuestions(projectName string) (*config.PresetConfig, string, error) {
 		"Vanilla",
 		"Remix",
 		"Vitest (experimental)",
+		"React PWA + Go BFF",
 		"None (no frontend)",
 	})
 	if err != nil {
 		return nil, "", err
+	}
+
+	useCapacitor := false
+	if frontend == "React PWA + Go BFF" {
+		useCapacitor, err = prompt.Confirm("Enable Capacitor for mobile? (PWA + native wrapper)")
+		if err != nil {
+			return nil, "", err
+		}
 	}
 
 	database, err := prompt.Select("Choose your database", []string{
@@ -195,7 +230,7 @@ func askQuestions(projectName string) (*config.PresetConfig, string, error) {
 		}
 	}
 
-	return buildConfig(projectName, backend, frontend, database, observability, deployMode, authChoice, agents), remoteURL, nil
+	return buildConfig(projectName, backend, frontend, database, observability, deployMode, authChoice, agents, useCapacitor), remoteURL, nil
 }
 
 func buildBackendConfig(choice string) config.Stack {
@@ -259,6 +294,13 @@ func buildFrontendConfig(choice string) config.FrontendStack {
 			Styling:   "css",
 			BuildTool: "vite",
 		}
+	case "React PWA + Go BFF":
+		return config.FrontendStack{
+			Framework: "react",
+			Styling:   "tailwind",
+			BuildTool: "vite",
+			BFF:       "go",
+		}
 	default:
 		return config.FrontendStack{
 			Framework: "react",
@@ -291,6 +333,7 @@ func buildConfig(
 	observability bool,
 	deployMode, authChoice string,
 	agents bool,
+	useCapacitor bool,
 ) *config.PresetConfig {
 	stack := buildBackendConfig(backendChoice)
 	frontendCfg := buildFrontendConfig(frontendChoice)
@@ -304,6 +347,10 @@ func buildConfig(
 
 	stack.Frontend = frontendCfg
 	stack.Database = dbCfg
+
+	if useCapacitor {
+		stack.Frontend.Mobile = "capacitor"
+	}
 
 	features := config.Features{
 		Frontend:      hasFrontend,

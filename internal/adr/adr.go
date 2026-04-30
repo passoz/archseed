@@ -20,11 +20,7 @@ func CreateADR(title string) error {
 		return fmt.Errorf("creating docs/adr: %w", err)
 	}
 
-	count, err := fsutil.CountADRs("docs/adr")
-	if err != nil {
-		return fmt.Errorf("counting ADRs: %w", err)
-	}
-	number := count + 1
+	number := fsutil.NextADRNumber("docs/adr")
 
 	slug := slugify(title)
 	filename := fmt.Sprintf("docs/adr/%04d-%s.md", number, slug)

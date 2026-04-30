@@ -19,6 +19,12 @@
 
 - Auth Provider: {{.Stack.Auth.Provider}}
 - Protocol: {{.Stack.Auth.Protocol}}
+{{if eq .Stack.Frontend.BFF "go"}}
+- **BFF Auth Boundary**: The Go Frontend Server is the sole auth boundary.
+  - Auth tokens MUST NOT be stored in `localStorage` or accessible to client-side JavaScript.
+  - Use **httpOnly, Secure, SameSite cookies** managed by the BFF.
+  - The React SPA never handles tokens directly — all `/api/*` requests go through the BFF proxy.
+{{end}}
 - All protected endpoints must validate tokens.
 - Role-based access control must be enforced.
 {{else}}

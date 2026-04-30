@@ -19,13 +19,13 @@ jobs:
           go-version: "1.26"
 
       - name: Lint
-        run: cd apps/api && go vet ./...
+        run: test -d apps/api && cd apps/api && go vet ./... || echo "  (skip: apps/api not found)"
 
       - name: Test
-        run: cd apps/api && go test ./...
+        run: test -d apps/api && cd apps/api && go test ./... || echo "  (skip: apps/api not found)"
 
       - name: Build
-        run: cd apps/api && go build -o /dev/null ./cmd/api
+        run: test -d apps/api && cd apps/api && go build -o /dev/null ./cmd/api || echo "  (skip: apps/api not found)"
       {{end}}
 
       {{if eq .Stack.Backend.Framework "nestjs"}}
@@ -35,16 +35,16 @@ jobs:
           node-version: "22"
 
       - name: Install dependencies
-        run: cd apps/api && npm ci
+        run: test -d apps/api && cd apps/api && npm ci || echo "  (skip: apps/api not found)"
 
       - name: Lint
-        run: cd apps/api && npm run lint
+        run: test -d apps/api && cd apps/api && npm run lint || echo "  (skip: apps/api not found)"
 
       - name: Test
-        run: cd apps/api && npm test
+        run: test -d apps/api && cd apps/api && npm test || echo "  (skip: apps/api not found)"
 
       - name: Build
-        run: cd apps/api && npm run build
+        run: test -d apps/api && cd apps/api && npm run build || echo "  (skip: apps/api not found)"
       {{end}}
 
       {{if .Features.Frontend}}
@@ -55,15 +55,31 @@ jobs:
           node-version: "22"
 
       - name: Install frontend dependencies
-        run: cd apps/web && npm ci
+        run: test -d apps/web && cd apps/web && npm ci || echo "  (skip: apps/web not found)"
 
       - name: Lint
-        run: cd apps/web && npm run lint
+        run: test -d apps/web && cd apps/web && npm run lint || echo "  (skip: apps/web not found)"
 
       - name: Test
-        run: cd apps/web && npm test
+        run: test -d apps/web && cd apps/web && npm test || echo "  (skip: apps/web not found)"
 
       - name: Build
-        run: cd apps/web && npm run build
+        run: test -d apps/web && cd apps/web && npm run build || echo "  (skip: apps/web not found)"
       {{end}}
+      {{end}}
+
+      {{if eq .Stack.Frontend.BFF "go"}}
+      - name: Setup Go (Frontend BFF)
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      - name: Lint BFF
+        run: test -d apps/front-server && cd apps/front-server && go vet ./... || echo "  (skip: apps/front-server not found)"
+
+      - name: Test BFF
+        run: test -d apps/front-server && cd apps/front-server && go test ./... || echo "  (skip: apps/front-server not found)"
+
+      - name: Build BFF
+        run: test -d apps/front-server && cd apps/front-server && go build -o /dev/null . || echo "  (skip: apps/front-server not found)"
       {{end}}

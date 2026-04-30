@@ -35,6 +35,15 @@ Not applicable for this preset.
 - Framework: {{.Stack.Frontend.Framework}}
 - Styling: {{.Stack.Frontend.Styling}}
 - Build Tool: {{.Stack.Frontend.BuildTool}}
+{{if eq .Stack.Frontend.BFF "go"}}
+- **Frontend Server (BFF)**: Go reverse-proxy that serves the built React SPA and proxies `/api/*` to the backend.
+  - Architecture: Browser → Go BFF (port 8080) → Backend API (port 3000). The frontend never calls the backend directly.
+  - Auth boundary: httpOnly cookies managed by the BFF — no JWT in localStorage.
+  - Directory: `apps/front-server/` (Go), `apps/web/` (React).
+{{end}}
+{{if eq .Stack.Frontend.Mobile "capacitor"}}
+- **Mobile**: Capacitor wrapper reusing the same React SPA. API base URL configured via environment variable.
+{{end}}
 {{else}}
 Not applicable for this preset.
 {{end}}

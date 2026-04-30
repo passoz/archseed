@@ -4,11 +4,16 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"github.com/passoz/archseed/internal/config"
 	"github.com/passoz/archseed/internal/fsutil"
 	"github.com/passoz/archseed/internal/templates"
 )
+
+// safeProjectPattern allows alphanumeric characters, hyphens, underscores, and dots.
+// The project identifier must not be empty and must not start with a dot or hyphen.
+var safeProjectPattern = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9._-]*$`)
 
 type fileSpec struct {
 	template string
@@ -23,11 +28,19 @@ func Generate(opts config.InitOptions, preset *config.PresetConfig) error {
 		return fmt.Errorf("initializing template engine: %w", err)
 	}
 
-	data := buildTemplateData(opts.ProjectName, preset)
+	// Derive a clean project identifier from the target directory basename.
+	// This ensures archseed init /tmp/my-app produces identifier "my-app".
+	projectIdentifier := filepath.Base(opts.ProjectName)
+	if err := validateProjectIdentifier(projectIdentifier); err != nil {
+		return fmt.Errorf("invalid project identifier %q derived from %q: %w",
+			projectIdentifier, opts.ProjectName, err)
+	}
+
+	data := buildTemplateData(projectIdentifier, preset)
 
 	files := buildFileList(preset)
 
-	fmt.Printf("\nProject: %s\n", opts.ProjectName)
+	fmt.Printf("\nProject: %s\n", projectIdentifier)
 	fmt.Printf("Preset:  %s\n\n", preset.Name)
 	fmt.Println("Generated:")
 
@@ -101,6 +114,21 @@ func generateAppAgents(eng *templates.Engine, baseData *templates.TemplateData, 
 		}
 	}
 
+	if baseData.Stack.Frontend.BFF == "go" {
+		bffData := *baseData
+		bffData.AppName = "Frontend Server"
+		bffData.AppType = "bff"
+		content, err := eng.Execute("agents/agents-app.md", &bffData)
+		if err == nil {
+			fullPath := filepath.Join(opts.ProjectName, "apps/front-server/AGENTS.md")
+			written, _ := fsutil.WriteFileSafe(fullPath, content, opts.Force)
+			if written {
+				fmt.Printf("  ✓ apps/front-server/AGENTS.md\n")
+				generated++
+			}
+		}
+	}
+
 	return generated
 }
 
@@ -154,10 +182,10 @@ func buildFileList(preset *config.PresetConfig) []fileSpec {
 	return files
 }
 
-func printNextSteps(projectName string) {
+func printNextSteps(projectDir string) {
 	fmt.Println()
 	fmt.Println("Next steps:")
-	fmt.Printf("  1. cd %s\n", projectName)
+	fmt.Printf("  1. cd %s\n", projectDir)
 	fmt.Printf("  2. archseed doctor\n")
 	fmt.Printf("  3. review project.kernel.yaml\n")
 	fmt.Printf("  4. edit docs/product/PRD.md\n")
@@ -165,4 +193,19 @@ func printNextSteps(projectName string) {
 		fmt.Printf("  5. git init && git add -A && git commit -m \"chore: initial bootstrap from archseed\"\n")
 	}
 	fmt.Printf("  6. archseed agent generate --phase bootstrap\n")
+}
+
+// validateProjectIdentifier checks that the project name is safe for use in
+// generated identifiers (database names, DSNs, YAML values, documentation).
+func validateProjectIdentifier(name string) error {
+	if name == "" {
+		return fmt.Errorf("project identifier must not be empty")
+	}
+	if name == "." || name == ".." {
+		return fmt.Errorf("project identifier must not be %q", name)
+	}
+	if !safeProjectPattern.MatchString(name) {
+		return fmt.Errorf("project identifier %q contains invalid characters; use only letters, digits, hyphens, underscores, and dots", name)
+	}
+	return nil
 }

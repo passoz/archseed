@@ -4,30 +4,30 @@ dev:
 	@echo "Starting development environment..."
 {{if .Features.Docker}}	docker compose up -d
 {{end}}
-{{if eq .Stack.Backend.Language "go"}}	cd apps/api && go run ./cmd/api &
-{{else if eq .Stack.Backend.Framework "nestjs"}}	cd apps/api && npm run start:dev &
+{{if eq .Stack.Backend.Language "go"}}	@if [ -d apps/api ]; then cd apps/api && go run ./cmd/api &; else echo "  (skip: apps/api not found — add Go code skeleton)"; fi
+{{else if eq .Stack.Backend.Framework "nestjs"}}	@if [ -d apps/api ]; then cd apps/api && npm run start:dev &; else echo "  (skip: apps/api not found — add NestJS code skeleton)"; fi
 {{end}}
-{{if .Features.Frontend}}	cd apps/web && npm run dev &
+{{if .Features.Frontend}}	@if [ -d apps/web ]; then cd apps/web && npm run dev &; else echo "  (skip: apps/web not found — add frontend code skeleton)"; fi
 {{end}}
 	@echo "Dev environment ready."
 
 test:
-{{if eq .Stack.Backend.Language "go"}}	cd apps/api && go test ./...
-{{else if eq .Stack.Backend.Framework "nestjs"}}	cd apps/api && npm test
+{{if eq .Stack.Backend.Language "go"}}	@if [ -d apps/api ]; then cd apps/api && go test ./...; else echo "  (skip: apps/api not found)"; fi
+{{else if eq .Stack.Backend.Framework "nestjs"}}	@if [ -d apps/api ]; then cd apps/api && npm test; else echo "  (skip: apps/api not found)"; fi
 {{end}}
-{{if .Features.Frontend}}	cd apps/web && npm test
+{{if .Features.Frontend}}	@if [ -d apps/web ]; then cd apps/web && npm test; else echo "  (skip: apps/web not found)"; fi
 {{end}}
 lint:
-{{if eq .Stack.Backend.Language "go"}}	cd apps/api && golangci-lint run
-{{else if eq .Stack.Backend.Framework "nestjs"}}	cd apps/api && npm run lint
+{{if eq .Stack.Backend.Language "go"}}	@if [ -d apps/api ]; then cd apps/api && golangci-lint run; else echo "  (skip: apps/api not found)"; fi
+{{else if eq .Stack.Backend.Framework "nestjs"}}	@if [ -d apps/api ]; then cd apps/api && npm run lint; else echo "  (skip: apps/api not found)"; fi
 {{end}}
-{{if .Features.Frontend}}	cd apps/web && npm run lint
+{{if .Features.Frontend}}	@if [ -d apps/web ]; then cd apps/web && npm run lint; else echo "  (skip: apps/web not found)"; fi
 {{end}}
 build:
-{{if eq .Stack.Backend.Language "go"}}	cd apps/api && go build -o bin/api ./cmd/api
-{{else if eq .Stack.Backend.Framework "nestjs"}}	cd apps/api && npm run build
+{{if eq .Stack.Backend.Language "go"}}	@if [ -d apps/api ]; then cd apps/api && go build -o bin/api ./cmd/api; else echo "  (skip: apps/api not found)"; fi
+{{else if eq .Stack.Backend.Framework "nestjs"}}	@if [ -d apps/api ]; then cd apps/api && npm run build; else echo "  (skip: apps/api not found)"; fi
 {{end}}
-{{if .Features.Frontend}}	cd apps/web && npm run build
+{{if .Features.Frontend}}	@if [ -d apps/web ]; then cd apps/web && npm run build; else echo "  (skip: apps/web not found)"; fi
 {{end}}
 {{if .Features.Docker}}
 docker-up:
@@ -35,4 +35,17 @@ docker-up:
 
 docker-down:
 	docker compose down
+{{end}}
+{{if eq .Stack.Frontend.BFF "go"}}
+dev-front-server:
+	@if [ -d apps/front-server ]; then cd apps/front-server && go run .; else echo "  (skip: apps/front-server not found)"; fi
+
+build-front-server:
+	@if [ -d apps/front-server ]; then cd apps/front-server && go build -o bin/front-server .; else echo "  (skip: apps/front-server not found)"; fi
+
+test-front-server:
+	@if [ -d apps/front-server ]; then cd apps/front-server && go test ./...; else echo "  (skip: apps/front-server not found)"; fi
+
+lint-front-server:
+	@if [ -d apps/front-server ]; then cd apps/front-server && go vet ./...; else echo "  (skip: apps/front-server not found)"; fi
 {{end}}

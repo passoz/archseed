@@ -64,6 +64,8 @@ type FrontendStack struct {
 	Framework string `yaml:"framework"`
 	Styling   string `yaml:"styling"`
 	BuildTool string `yaml:"build_tool"`
+	BFF       string `yaml:"bff,omitempty"`   // BFF layer: "go", ""
+	Mobile    string `yaml:"mobile,omitempty"` // Mobile target: "capacitor", ""
 }
 
 // DatabaseStack holds database technology choices.
