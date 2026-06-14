@@ -1,0 +1,57 @@
+package bff
+
+import (
+	"net/http"
+
+	"{{.ProjectName}}/internal/platform/config"
+)
+
+// RegisterRoutes registers all BFF routes on the given mux.
+func RegisterRoutes(mux *http.ServeMux, cfg *config.Config) {
+	// Health and readiness
+	mux.HandleFunc("GET /healthz", healthHandler)
+	mux.HandleFunc("GET /readyz", readyHandler)
+
+	// Public runtime config
+	mux.HandleFunc("GET /config.json", configHandler(cfg))
+
+	// API routes — proxy to internal modules
+	mux.HandleFunc("GET /api/users", notImplementedHandler)
+	mux.HandleFunc("POST /api/users", notImplementedHandler)
+	mux.HandleFunc("GET /api/me", notImplementedHandler)
+
+	// Serve embedded SPA
+	mux.Handle("/", spaHandler())
+}
+
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status":"ok"}`))
+}
+
+func readyHandler(w http.ResponseWriter, r *http.Request) {
+	// TODO: check database, redis, rabbitmq connectivity
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status":"ready"}`))
+}
+
+func configHandler(cfg *config.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Write([]byte(`{
+  "environment": "` + cfg.Env + `",
+  "apiBaseUrl": "/api",
+  "defaultLocale": "pt-BR",
+  "supportedLocales": ["pt-BR", "en-US"]
+}`))
+	}
+}
+
+func notImplementedHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNotImplemented)
+	w.Write([]byte(`{"error":{"code":"not_implemented"}}`))
+}

@@ -12,7 +12,6 @@ features:
   queue: false
   storage: false
   auth: false
-  gateway: false
   docker: true
   github: true
   agents: true
@@ -21,18 +20,16 @@ stack:
   backend:
     language: go
     framework: net-http
-    router: chi
-    orm: ""
-    validation: ""
-    api_contract: ""
+    router: net-http
+    orm: sqlc
+    validation: go-playground-validator
+    api_contract: openapi
   frontend:
     framework: react
     styling: tailwind
     build_tool: vite
   database:
     primary: postgres
-    cache: ""
-    object_storage: ""
 quality:
   tests:
     unit: required

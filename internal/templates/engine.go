@@ -27,6 +27,15 @@ var agentsTemplates embed.FS
 //go:embed data/kernel/*
 var kernelTemplates embed.FS
 
+//go:embed data/backend/*
+var backendTemplates embed.FS
+
+//go:embed data/frontend/*
+var frontendTemplates embed.FS
+
+//go:embed data/database/*
+var databaseTemplates embed.FS
+
 // TemplateData holds all data passed to templates.
 type TemplateData struct {
 	ProjectName    string
@@ -57,11 +66,14 @@ func New() (*Engine, error) {
 	}
 
 	fsMap := map[string]fs.FS{
-		"root":    rootTemplates,
-		"docs":    docsTemplates,
-		"github":  githubTemplates,
-		"agents":  agentsTemplates,
-		"kernel":  kernelTemplates,
+		"root":     rootTemplates,
+		"docs":     docsTemplates,
+		"github":   githubTemplates,
+		"agents":   agentsTemplates,
+		"kernel":   kernelTemplates,
+		"backend":  backendTemplates,
+		"frontend": frontendTemplates,
+		"database": databaseTemplates,
 	}
 
 	for category, tfs := range fsMap {

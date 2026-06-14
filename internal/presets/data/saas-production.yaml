@@ -13,6 +13,7 @@ features:
   storage: true
   auth: true
   gateway: true
+  workers: true
   docker: true
   github: true
   agents: true
@@ -21,8 +22,8 @@ stack:
   backend:
     language: go
     framework: net-http
-    router: chi
-    orm: ent
+    router: net-http
+    orm: sqlc
     validation: go-playground-validator
     api_contract: openapi
   frontend:
@@ -40,14 +41,20 @@ stack:
     provider: rabbitmq
   gateway:
     provider: apisix
+  workers:
+    enabled: true
+    use_cases:
+      - outbox
+      - files
+      - notifications
   observability:
     logs: structured
-    stack: elk-or-loki
+    stack: loki-grafana-prometheus
 quality:
   tests:
     unit: required
     integration: required
-    e2e: recommended
+    e2e: required
   ci:
     provider: github-actions
     required_checks:
@@ -55,6 +62,9 @@ quality:
       - test
       - build
       - docker-build
+  coverage:
+    minimum_backend: 70
+    minimum_frontend: 60
 agents:
   enabled: true
   default_model_strategy:
@@ -63,3 +73,6 @@ agents:
     medium_coding: opencode/big-pickle
     frontend_low_medium: opencode/minimax-m2.5-free
     file_ops: opencode/big-pickle
+  require_plan_before_code: true
+  require_tests_for_changes: true
+  require_docs_update: true

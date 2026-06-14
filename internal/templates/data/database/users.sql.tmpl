@@ -1,0 +1,20 @@
+-- name: GetUserByID :one
+select id, email, full_name, tenant_id, created_at, updated_at
+from user_accounts
+where id = $1 and deleted_at is null;
+
+-- name: GetUserByEmail :one
+select id, email, full_name, tenant_id, created_at, updated_at
+from user_accounts
+where email = $1 and deleted_at is null;
+
+-- name: CreateUser :one
+insert into user_accounts (id, email, full_name, tenant_id)
+values ($1, $2, $3, $4)
+returning id, email, full_name, tenant_id, created_at, updated_at;
+
+-- name: ListUsersByTenant :many
+select id, email, full_name, tenant_id, created_at, updated_at
+from user_accounts
+where tenant_id = $1 and deleted_at is null
+order by created_at desc;

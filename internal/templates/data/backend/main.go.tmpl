@@ -1,0 +1,73 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"{{.ProjectName}}/internal/bff"
+	"{{.ProjectName}}/internal/platform/config"
+	"{{.ProjectName}}/internal/platform/database"
+	"{{.ProjectName}}/internal/platform/httpserver"
+	"{{.ProjectName}}/internal/platform/logger"
+)
+
+func main() {
+	cfg, err := config.Load()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to load config: %v\n", err)
+		os.Exit(1)
+	}
+
+	log := logger.New(cfg)
+
+	log.Info("starting {{.ProjectName}}",
+		slog.String("env", cfg.Env),
+		slog.String("http_addr", cfg.HTTPAddr),
+	)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	db, err := database.Connect(ctx, cfg.DatabaseURL)
+	if err != nil {
+		log.Error("failed to connect to database", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+	defer db.Close()
+	log.Info("database connected")
+
+	mux := http.NewServeMux()
+	bff.RegisterRoutes(mux, cfg)
+
+	srv := httpserver.New(cfg.HTTPAddr, mux, log)
+
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		log.Info("http server listening", slog.String("addr", cfg.HTTPAddr))
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Error("http server error", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
+	}()
+
+	sig := <-shutdown
+	log.Info("shutting down", slog.String("signal", sig.String()))
+
+	shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelShutdown()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Error("graceful shutdown failed", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
+	log.Info("shutdown complete")
+}

@@ -1,79 +1,1722 @@
 # AGENTS.md
 
-## Project Mission
+## Purpose
 
-{{.Description}}
+This file defines the mandatory rules for AI agents and human contributors working on this project.
 
-## Non-Negotiable Rules
+Agents must read this file before making any change.
 
-- Never alter architectural decisions recorded in ADRs without creating a new ADR.
-- Never remove tests just to make CI pass.
-- Never introduce heavy dependencies without justification.
-- Never change the stack without updating project.kernel.yaml.
-{{if .Stack.Backend.APIContract}}- Never change API contracts without updating documentation and tests.{{end}}
-- Never commit secrets.
-- Never create dead code, fake mocks or placeholder behavior in critical flows.
+The goal of this project architecture is to be:
 
-## Required Workflow
+- Go-first
+- stdlib-first
+- SQL-first
+- self-hostable
+- modular
+- explicit
+- easy to audit
+- easy to run locally
+- friendly to AI-assisted development
+- ready to evolve from a modular monolith into separated services only when justified
 
-1. Read README.md.
-2. Read project.kernel.yaml.
-3. Read ADRs relevant to your task.
-4. Read the issue/task.
-5. Create a plan before altering code.
-6. Implement in small steps.
-7. Run tests.
-8. Update documentation if needed.
-9. Explain changes made.
+Do not ignore this file.
 
-## Commands
+When in doubt, follow this file over assumptions, framework defaults, or previous habits.
 
-```bash
-{{if .Features.Docker}}make docker-up
-make docker-down
-{{end}}make dev
-make test
-make lint
-make build
+---
+
+# 1. Core Architecture
+
+## 1.1 Architectural Style
+
+This project follows a:
+
+```txt
+Single Binary Modular Monolith with Embedded React SPA
 ```
 
-## Architecture Rules
-{{if .Features.Backend}}
-- Backend follows modular architecture.
-- Domain does not depend on infrastructure.
-- HTTP handlers do not contain business rules.
-- Repositories do not return HTTP models.
-- Errors must be typed and logged.
-- Every new feature must have tests.
-{{end}}
+The default architecture is:
+
+```txt
+React SPA / PWA-ready
+        ↓
+Go BFF / HTTP Server
+        ↓
+Go application modules
+        ↓
+{{.Stack.Database.Primary}} + {{.Stack.Database.Cache}} + {{.Stack.Messaging.Provider}} + {{.Stack.Database.ObjectStorage}}
+```
+
+The system must start as a modular monolith.
+
+Do not split modules into separate services unless there is a documented architectural reason.
+
+Valid reasons for service extraction include:
+
+- independent scaling requirement
+- independent deployment requirement
+- clear domain boundary
+- operational isolation
+- security isolation
+- long-running workload isolation
+- team ownership separation
+
+Premature microservices are not allowed.
+
+---
+
+## 1.2 Main Runtime Model
+
+The project builds a single Go binary.
+
+The binary exposes multiple commands:
+
+```bash
+app serve
+app migrate up
+{{if .Features.Workers}}app worker outbox
+app worker files
+app worker notifications
+{{end}}```
+
+The same binary may be used by multiple containers with different commands.
+
+Example:
+
+```yaml
+services:
+  app:
+    image: {{.ProjectName}}
+    command: ["app", "serve"]
+{{if .Features.Workers}}
+  worker-outbox:
+    image: {{.ProjectName}}
+    command: ["app", "worker", "outbox"]
+
+  worker-files:
+    image: {{.ProjectName}}
+    command: ["app", "worker", "files"]
+{{end}}```
+
+The React SPA build is embedded into the Go binary using `go:embed`.
+
+---
+
+# 2. Approved Tech Stack
+
 {{if .Features.Frontend}}
-- Components must be reusable and tested.
-- State management must be explicit.
-- No inline styles without justification.
+## 2.1 Frontend
+
+Approved frontend stack:
+
+```txt
+React
+TypeScript
+Vite
+Tailwind CSS
+TanStack Query
+React Router or TanStack Router
+SPA-first
+PWA-ready
+```
+
+The frontend must be a React SPA.
+
+It may become a PWA when needed, but PWA-specific features should not be added prematurely.
+
+Capacitor may be used later for mobile packaging if needed.
+
+Do not introduce:
+
+- Next.js
+- Remix
+- Angular
+- Vue
+- frontend frameworks that change the architectural model without explicit approval
+
 {{end}}
+---
 
-## Testing Rules
+{{if .Features.Backend}}
+## 2.2 Backend and BFF
 
-- Business rules require unit tests.
-- Database integration requires integration tests.
-- Critical routes require API tests.
-{{if eq .Quality.Tests.E2E "required"}}- Main flows require e2e tests.{{end}}
+Approved backend stack:
 
-## Documentation Rules
+```txt
+Go
+net/http
+sqlc
+PostgreSQL
+UUIDv7
+OpenAPI
+RabbitMQ
+Redis
+MinIO
+```
 
-- Architecture changes require ADR.
-{{if .Stack.Backend.APIContract}}- Endpoint changes require OpenAPI updates.{{end}}
-- Environment variable changes require .env.example update.
-- Infrastructure changes require docs/engineering update.
+All HTTP servers must use Go `net/http`.
 
-## Model Routing
+Do not introduce:
 
-{{if .Agents.Enabled}}
-- Use {{.Agents.DefaultModelStrategy.ReasoningHeavy}} for hard decisions and architectural review.
-- Use {{.Agents.DefaultModelStrategy.ComplexCoding}} for heavy coding.
-- Use {{.Agents.DefaultModelStrategy.MediumCoding}} for medium complexity.
-- Use {{.Agents.DefaultModelStrategy.FrontendLowMedium}} for frontend and adjustments.
-- Use {{.Agents.DefaultModelStrategy.FileOps}} for file creation, renames and mechanical tasks.
-{{else}}
-- Define model routing in project.kernel.yaml agents section.
+- chi
+- gin
+- echo
+- fiber
+- fasthttp
+- Nest.js
+- Express
+- Fastify
+- Hono
+- Next.js API routes
+
+The BFF must be written in Go.
+
+Nest.js is not allowed.
+
+The BFF is responsible for:
+
+- serving the embedded React SPA
+- handling browser-facing HTTP routes
+- managing secure sessions
+- using `httpOnly` cookies
+- protecting internal APIs
+- integrating with authentication providers
+- aggregating backend data for frontend screens
+- hiding sensitive internal service details from the browser
+- exposing stable BFF contracts
+
+The browser must never call sensitive internal APIs directly.
+
 {{end}}
+---
+
+{{if .Features.Database}}
+## 2.3 Database
+
+Approved database:
+
+```txt
+PostgreSQL
+```
+
+PostGIS may be used when geospatial features are required.
+
+Database access must use:
+
+```txt
+sqlc
+```
+
+Do not introduce ORMs.
+
+Forbidden ORMs and query builders:
+
+- Ent
+- GORM
+- Prisma
+- TypeORM
+- Sequelize
+- Drizzle for Go services
+
+Raw SQL is allowed when managed through sqlc query files.
+
+Migrations must be versioned.
+
+Database schema changes must be explicit and reviewable.
+
+{{end}}
+---
+
+{{if .Features.Database}}
+## 2.4 IDs
+
+All domain entity IDs must use UUIDv7.
+
+Do not use auto-incrementing IDs for public or domain entities.
+
+Forbidden for domain entities:
+
+```sql
+serial
+bigserial
+identity columns as public IDs
+```
+
+Allowed only for internal technical tables when explicitly justified:
+
+```sql
+bigserial
+generated always as identity
+```
+
+Default rule:
+
+```txt
+Every meaningful domain entity gets a UUIDv7 primary key.
+```
+
+IDs should be generated by the application layer unless the project explicitly provides a safe database-side UUIDv7 function.
+
+{{end}}
+---
+
+{{if .Features.Queue}}
+## 2.5 Messaging
+
+Approved message broker:
+
+```txt
+RabbitMQ
+```
+
+RabbitMQ is the only approved message broker.
+
+Do not introduce:
+
+- NATS
+- Kafka
+- Redis Streams
+- Pulsar
+- SQS
+
+unless explicitly approved through an ADR.
+
+RabbitMQ should be used for:
+
+- asynchronous jobs
+- notifications
+- file processing
+- email processing
+- receipt generation
+- scraping jobs
+- long-running tasks
+- integration events
+- background workflows
+
+Prefer an Outbox Pattern for reliable event publishing.
+
+{{end}}
+---
+
+{{if .Features.Cache}}
+## 2.6 Cache and Ephemeral State
+
+Approved cache:
+
+```txt
+Redis
+```
+
+Redis may be used for:
+
+- cache
+- locks
+- rate limiting
+- ephemeral state
+- short-lived session metadata
+- idempotency keys
+
+Redis must not be the source of truth for domain data.
+
+{{end}}
+---
+
+{{if .Features.Storage}}
+## 2.7 Object Storage
+
+Approved object storage:
+
+```txt
+MinIO
+S3-compatible storage
+```
+
+Use MinIO/S3 for:
+
+- uploaded files
+- images
+- PDFs
+- generated reports
+- receipts
+- exported documents
+- media files
+
+Do not store large binary files directly in PostgreSQL unless explicitly justified.
+
+{{end}}
+---
+
+{{if .Features.Observability}}
+## 2.8 Observability
+
+Approved observability stack:
+
+```txt
+slog or zap
+structured JSON logs
+Loki
+Grafana
+Prometheus
+OpenTelemetry when needed
+```
+
+ELK is not allowed.
+
+Do not introduce:
+
+- Elasticsearch
+- Logstash
+- Kibana
+
+unless explicitly approved through an ADR.
+
+Every HTTP service should expose:
+
+```txt
+/healthz
+/readyz
+/metrics
+```
+
+Logs must be structured.
+
+Logs must be written in English.
+
+{{end}}
+---
+
+## 2.9 Infrastructure
+
+Default local infrastructure:
+
+```txt
+Docker Compose
+```
+
+The project must run locally with:
+
+```bash
+docker compose up
+```
+
+or an equivalent documented command.
+
+The local environment should require no manual post-install configuration.
+
+The setup should automatically handle:
+
+- database creation
+- migrations
+- seed data
+- initial admin user when applicable
+- MinIO bucket creation
+- RabbitMQ exchanges and queues
+- Redis service
+- observability provisioning when enabled
+- Keycloak realm import when Keycloak is used
+
+Future production evolution may use:
+
+- K3s
+- Kubernetes
+- Longhorn
+- Helm
+- Tailscale
+- VPS gateway
+- self-hosted home server
+
+But Kubernetes must not be required for local development.
+
+---
+
+# 3. Language and Localization Rules
+
+## 3.1 Internal Language
+
+All internal project elements must be written in English.
+
+This includes:
+
+- source code
+- filenames
+- directories
+- variables
+- constants
+- functions
+- methods
+- structs
+- interfaces
+- database tables
+- database columns
+- indexes
+- SQL queries
+- API routes
+- JSON fields
+- OpenAPI schemas
+- RabbitMQ exchange names
+- RabbitMQ queue names
+- RabbitMQ routing keys
+- event names
+- logs
+- error codes
+- comments
+- commit messages
+- branch names
+- technical identifiers
+
+Do not use Portuguese identifiers in code, database structures, APIs, events, logs, or technical runtime messages.
+
+Good:
+
+```go
+func CreateUserAccount(ctx context.Context, input CreateUserAccountInput) error
+```
+
+Bad:
+
+```go
+func CriarContaUsuario(ctx context.Context, input CriarContaUsuarioInput) error
+```
+
+Good:
+
+```sql
+create table user_accounts (
+    id uuid primary key,
+    email text not null,
+    created_at timestamptz not null
+);
+```
+
+Bad:
+
+```sql
+create table contas_usuario (
+    id uuid primary key,
+    email text not null,
+    criado_em timestamptz not null
+);
+```
+
+---
+
+## 3.2 User-Facing Localization
+
+Only user-facing views may be localized.
+
+No user-facing string may be hardcoded in code.
+
+Forbidden:
+
+```tsx
+<button>Entrar</button>
+```
+
+Required:
+
+```tsx
+<button>{t("auth.login.submit")}</button>
+```
+
+All user-facing strings must live in translation/message files.
+
+Frontend translation files should live under:
+
+```txt
+web/src/i18n/locales
+```
+
+Recommended structure for small projects:
+
+```txt
+web/src/i18n/locales/
+  en-US.json
+  pt-BR.json
+```
+
+Recommended structure for larger projects:
+
+```txt
+web/src/i18n/locales/
+  en-US/
+    common.json
+    auth.json
+    users.json
+    errors.json
+
+  pt-BR/
+    common.json
+    auth.json
+    users.json
+    errors.json
+```
+
+User-facing strings include:
+
+- page titles
+- labels
+- buttons
+- menus
+- form placeholders
+- validation messages
+- toast messages
+- modals
+- empty states
+- confirmation messages
+- table headers
+- status labels
+- user-facing errors
+
+---
+
+## 3.3 Backend Localization
+
+APIs should return stable error codes, not translated human messages.
+
+Good:
+
+```json
+{
+  "error": {
+    "code": "invalid_credentials"
+  }
+}
+```
+
+Bad:
+
+```json
+{
+  "message": "E-mail ou senha inválidos."
+}
+```
+
+The frontend is responsible for translating API error codes into user-facing messages.
+
+Backend localization is allowed only for backend-generated user-facing content, such as:
+
+- emails
+- PDFs
+- receipts
+- WhatsApp messages
+- SMS messages
+- push notifications
+- exported reports
+
+Backend translation files should live under:
+
+```txt
+internal/platform/i18n/locales
+```
+
+---
+
+## 3.4 Documentation Language
+
+Technical documentation must exist in both English and Brazilian Portuguese.
+
+Documentation should be mirrored across:
+
+```txt
+docs/en-US
+docs/pt-BR
+```
+
+Whenever a documentation file is created or significantly changed in one language, the corresponding file in the other language must be created or updated.
+
+Recommended structure:
+
+```txt
+docs/
+  en-US/
+    architecture.md
+    local-development.md
+    deployment.md
+    api-guidelines.md
+    database-guidelines.md
+    worker-guidelines.md
+    ai-agent-workflow.md
+
+  pt-BR/
+    architecture.md
+    local-development.md
+    deployment.md
+    api-guidelines.md
+    database-guidelines.md
+    worker-guidelines.md
+    ai-agent-workflow.md
+```
+
+The English version should preserve technical precision and be suitable for AI agents and external contributors.
+
+The Portuguese version should preserve the same meaning and may include clearer explanations for the project owner and local team.
+
+---
+
+# 4. Project Structure
+
+Prefer this structure:
+
+```txt
+.
+├── cmd/
+│   └── app/
+│       └── main.go
+│
+├── internal/
+│   ├── platform/
+│   │   ├── config/
+│   │   ├── logger/
+│   │   ├── httpserver/
+│   │   ├── database/
+│   │   ├── migrations/
+│   │   ├── rabbitmq/
+│   │   ├── redis/
+│   │   ├── minio/
+│   │   ├── auth/
+│   │   ├── uuid/
+│   │   └── i18n/
+│   │
+│   ├── modules/
+│   │   ├── users/
+│   │   ├── tenants/
+│   │   ├── files/
+│   │   ├── notifications/
+│   │   └── audit/
+│   │
+│   ├── bff/
+│   │   ├── handlers/
+│   │   └── routes.go
+│   │
+│   └── workers/
+│       ├── outbox/
+│       ├── files/
+│       └── notifications/
+│
+├── web/
+│   ├── src/
+│   ├── public/
+│   ├── package.json
+│   └── vite.config.ts
+│
+├── db/
+│   ├── migrations/
+│   └── queries/
+│
+├── openapi/
+│   ├── bff.openapi.yaml
+│   └── api.openapi.yaml
+│
+├── docs/
+│   ├── en-US/
+│   └── pt-BR/
+│
+├── infra/
+│   ├── compose/
+│   ├── postgres/
+│   ├── rabbitmq/
+│   ├── minio/
+│   ├── grafana/
+│   └── prometheus/
+│
+├── scripts/
+├── docker-compose.yml
+├── Dockerfile
+├── Makefile
+├── README.md
+├── README.en-US.md
+└── AGENTS.md
+```
+
+Do not create unnecessary layers.
+
+Avoid overly ceremonial architecture.
+
+Prefer practical modularity.
+
+---
+
+{{if .Features.Backend}}
+# 5. Go Backend Rules
+
+## 5.1 HTTP
+
+Use `net/http`.
+
+Use explicit route registration.
+
+Prefer Go's standard HTTP patterns.
+
+Example:
+
+```go
+mux := http.NewServeMux()
+
+mux.HandleFunc("GET /healthz", healthHandler)
+mux.HandleFunc("GET /readyz", readinessHandler)
+mux.HandleFunc("GET /api/users", usersHandler.ListUsers)
+mux.HandleFunc("POST /api/users", usersHandler.CreateUser)
+```
+
+Do not add a router dependency unless explicitly approved.
+
+---
+
+## 5.2 Handlers
+
+Handlers must be thin.
+
+Handlers may:
+
+- parse input
+- validate transport-level data
+- call services
+- write responses
+- map service errors to HTTP errors
+
+Handlers must not contain domain logic.
+
+---
+
+## 5.3 Services
+
+Services contain application logic.
+
+Services should coordinate:
+
+- validation
+- repositories
+- transactions
+- domain rules
+- event creation
+- authorization checks
+
+Services should not depend on HTTP details.
+
+---
+
+## 5.4 Repositories
+
+Repositories use sqlc-generated code.
+
+Repositories should hide persistence details from services.
+
+Repositories must not return localized messages.
+
+Repositories must not contain HTTP logic.
+
+---
+
+## 5.5 Errors
+
+Use stable error codes.
+
+Internal errors should be logged in English.
+
+User-facing error messages must be translated in the frontend.
+
+Recommended API error shape:
+
+```json
+{
+  "error": {
+    "code": "validation_failed",
+    "fields": [
+      {
+        "field": "email",
+        "code": "required"
+      }
+    ]
+  }
+}
+```
+
+Do not expose sensitive internal error details to the client.
+
+---
+
+## 5.6 Config
+
+Configuration must come from environment variables, config files, or secrets.
+
+Do not hardcode environment-specific values.
+
+Do not commit real secrets.
+
+Required config should fail fast at startup.
+
+Good config names:
+
+```txt
+APP_ENV
+APP_HTTP_ADDR
+DATABASE_URL
+REDIS_URL
+RABBITMQ_URL
+S3_ENDPOINT
+S3_BUCKET
+S3_ACCESS_KEY_ID
+S3_SECRET_ACCESS_KEY
+OIDC_ISSUER_URL
+OIDC_CLIENT_ID
+OIDC_CLIENT_SECRET
+```
+
+{{end}}
+---
+
+{{if .Features.Frontend}}
+# 6. React Frontend Rules
+
+## 6.1 General
+
+Use React with TypeScript.
+
+Use Vite.
+
+Use Tailwind CSS.
+
+Use TanStack Query for server state.
+
+Use a router only for UI navigation.
+
+Do not put domain business logic directly inside components.
+
+---
+
+## 6.2 Component Rules
+
+Components should be:
+
+- small
+- typed
+- readable
+- localized
+- accessible when possible
+
+Do not hardcode user-facing strings.
+
+Use translation keys.
+
+Bad:
+
+```tsx
+<h1>Usuários</h1>
+```
+
+Good:
+
+```tsx
+<h1>{t("users.list.title")}</h1>
+```
+
+---
+
+## 6.3 API Access
+
+The frontend must call the BFF only.
+
+Do not call internal backend services directly from the browser.
+
+Use relative API paths when possible:
+
+```txt
+/api/me
+/api/dashboard
+/api/users
+```
+
+Do not expose internal service URLs to the browser.
+
+---
+
+## 6.4 Authentication
+
+The browser should rely on secure cookies managed by the BFF.
+
+Do not store sensitive access tokens in:
+
+- localStorage
+- sessionStorage
+- indexedDB
+- plain JavaScript variables as long-lived auth state
+
+Use `httpOnly`, `Secure`, and `SameSite` cookies.
+
+---
+
+## 6.5 Runtime Public Config
+
+The SPA should not require rebuilds for environment changes.
+
+Prefer a runtime public config endpoint:
+
+```txt
+GET /config.json
+```
+
+Example:
+
+```json
+{
+  "environment": "production",
+  "apiBaseUrl": "/api",
+  "defaultLocale": "pt-BR",
+  "supportedLocales": ["pt-BR", "en-US"]
+}
+```
+
+{{end}}
+---
+
+{{if and .Features.Frontend .Features.Backend}}
+# 7. Embedded SPA Rules
+
+The Go binary should embed the built React SPA.
+
+The Go server should serve:
+
+```txt
+/                  -> React index.html
+/assets/*          -> static assets
+/api/*             -> BFF/API routes
+/healthz           -> health check
+/readyz            -> readiness check
+/metrics           -> Prometheus metrics
+/config.json       -> public runtime config
+```
+
+SPA fallback is required for frontend routes.
+
+Example frontend routes:
+
+```txt
+/dashboard
+/admin/users
+/settings/profile
+```
+
+These should return `index.html` unless the path matches an API route or a real static asset.
+
+Cache rules:
+
+```txt
+index.html      -> no-cache
+/config.json    -> no-cache
+hashed assets   -> long cache
+```
+
+{{end}}
+---
+
+{{if .Features.Database}}
+# 8. Database Rules
+
+## 8.1 Migrations
+
+All schema changes must be done through migrations.
+
+Migrations must be committed.
+
+Migrations must be deterministic.
+
+Do not manually change the database schema outside migrations.
+
+---
+
+## 8.2 sqlc
+
+SQL queries must live in:
+
+```txt
+db/queries
+```
+
+Generated sqlc code should live in an appropriate internal package, for example:
+
+```txt
+internal/platform/database/sqlc
+```
+
+Do not edit generated sqlc files manually.
+
+---
+
+## 8.3 Naming
+
+Use English names.
+
+Use snake_case for database identifiers.
+
+Good:
+
+```sql
+user_accounts
+created_at
+updated_at
+deleted_at
+tenant_id
+```
+
+Bad:
+
+```sql
+usuarios
+criado_em
+id_empresa
+```
+
+---
+
+## 8.4 Multi-Tenancy
+
+For SaaS projects, use tenant-aware design by default.
+
+Most domain tables should include:
+
+```sql
+tenant_id uuid not null
+```
+
+Queries must filter by tenant where applicable.
+
+Do not allow cross-tenant access.
+
+Tenant isolation is a security requirement.
+
+{{end}}
+---
+
+{{if .Features.Queue}}
+# 9. RabbitMQ and Async Jobs
+
+## 9.1 Event Naming
+
+Use English event names.
+
+Recommended format:
+
+```txt
+domain.entity.action
+```
+
+Examples:
+
+```txt
+users.user.created
+orders.order.created
+files.file.uploaded
+notifications.email.requested
+receipts.receipt.generated
+```
+
+---
+
+## 9.2 Queue Naming
+
+Use English queue names.
+
+Recommended format:
+
+```txt
+service.purpose
+```
+
+Examples:
+
+```txt
+worker.outbox
+worker.files
+worker.notifications
+worker.scraping
+```
+
+---
+
+## 9.3 Outbox Pattern
+
+For important domain events, prefer the Outbox Pattern.
+
+Flow:
+
+```txt
+1. Service handles command
+2. Service writes domain data in PostgreSQL
+3. Service writes an outbox event in the same transaction
+4. Outbox worker publishes the event to RabbitMQ
+5. Consumer workers process the event
+```
+
+This prevents losing events when the database transaction succeeds but message publishing fails.
+
+---
+
+## 9.4 Workers
+
+Workers must be idempotent whenever possible.
+
+Workers must log structured information.
+
+Workers must handle retries safely.
+
+Workers must not assume that a message is processed only once.
+
+Use dead-letter queues when appropriate.
+
+{{end}}
+---
+
+# 10. API Rules
+
+## 10.1 OpenAPI
+
+All stable HTTP APIs must have OpenAPI documentation.
+
+OpenAPI files live in:
+
+```txt
+openapi/
+```
+
+The OpenAPI contract should be updated when routes, request bodies, response bodies, or error formats change.
+
+---
+
+## 10.2 API Language
+
+API routes, fields, schemas, and error codes must be in English.
+
+Good:
+
+```json
+{
+  "fullName": "Jane Doe",
+  "preferredLocale": "pt-BR"
+}
+```
+
+Bad:
+
+```json
+{
+  "nomeCompleto": "Jane Doe",
+  "idiomaPreferido": "pt-BR"
+}
+```
+
+---
+
+## 10.3 Error Responses
+
+Use stable error codes.
+
+Example:
+
+```json
+{
+  "error": {
+    "code": "permission_denied"
+  }
+}
+```
+
+Validation example:
+
+```json
+{
+  "error": {
+    "code": "validation_failed",
+    "fields": [
+      {
+        "field": "email",
+        "code": "required"
+      },
+      {
+        "field": "password",
+        "code": "min_length",
+        "params": {
+          "min": 8
+        }
+      }
+    ]
+  }
+}
+```
+
+Do not return localized messages from APIs by default.
+
+---
+
+# 11. Security Rules
+
+## 11.1 Browser Security
+
+The browser is not a trusted environment.
+
+Do not expose sensitive internal APIs to the browser.
+
+Do not store access tokens in localStorage.
+
+Do not expose service-to-service credentials to frontend code.
+
+Use secure cookies for browser sessions.
+
+Recommended cookie flags:
+
+```txt
+HttpOnly
+Secure
+SameSite=Lax or SameSite=Strict
+```
+
+Use CSRF protection where applicable.
+
+---
+
+## 11.2 Secrets
+
+Never commit secrets.
+
+Forbidden in repository:
+
+- real passwords
+- real API keys
+- private keys
+- production tokens
+- database credentials
+- OIDC client secrets
+- S3 secrets
+
+Allowed:
+
+- `.env.example`
+- fake local development credentials
+- documented placeholders
+
+---
+
+## 11.3 Authorization
+
+Authentication is not authorization.
+
+Every sensitive operation must check permissions.
+
+For multi-tenant systems, every tenant-scoped query must enforce tenant isolation.
+
+---
+
+# 12. Logging and Observability
+
+## 12.1 Logs
+
+Logs must be structured JSON.
+
+Logs must be in English.
+
+Recommended fields:
+
+```txt
+level
+message
+time
+request_id
+trace_id
+user_id
+tenant_id
+module
+operation
+status_code
+duration_ms
+error
+```
+
+Good:
+
+```json
+{
+  "level": "error",
+  "message": "failed to create user",
+  "operation": "users.create",
+  "error": "duplicate email"
+}
+```
+
+Bad:
+
+```json
+{
+  "message": "erro ao criar usuário"
+}
+```
+
+---
+
+## 12.2 Metrics
+
+Expose Prometheus metrics at:
+
+```txt
+/metrics
+```
+
+Track at least:
+
+- HTTP request count
+- HTTP request duration
+- HTTP error count
+- worker jobs processed
+- worker failures
+- database errors
+- RabbitMQ publish failures
+- RabbitMQ consume failures
+
+---
+
+## 12.3 Health Checks
+
+Expose:
+
+```txt
+/healthz
+/readyz
+```
+
+`/healthz` should report whether the process is alive.
+
+`/readyz` should report whether the application is ready to serve traffic.
+
+Readiness may check:
+
+- database connection
+- Redis connection
+- RabbitMQ connection
+- MinIO connection when required
+
+---
+
+# 13. Testing Rules
+
+## 13.1 Required Tests
+
+Prefer tests for:
+
+- domain services
+- repositories
+- HTTP handlers
+- authorization rules
+- tenant isolation
+- workers
+- critical SQL queries
+- error mapping
+- frontend critical flows
+
+---
+
+## 13.2 Go Tests
+
+Use Go's standard testing package by default.
+
+Do not introduce large testing frameworks without need.
+
+Use table-driven tests when useful.
+
+---
+
+## 13.3 Frontend Tests
+
+Use lightweight frontend tests for critical behavior.
+
+Do not over-test implementation details.
+
+Prefer testing:
+
+- form validation
+- API integration boundaries
+- routing behavior
+- permission-based rendering
+- important user flows
+
+---
+
+## 13.4 Integration Tests
+
+Integration tests should be able to run against Docker Compose services.
+
+Do not require external cloud services for tests.
+
+---
+
+# 14. Docker and Local Development
+
+## 14.1 Local Startup
+
+The project should run locally with a simple command.
+
+Preferred:
+
+```bash
+docker compose up
+```
+
+Optional convenience commands may exist:
+
+```bash
+make dev
+make test
+make lint
+make migrate
+make sqlc
+make web-build
+```
+
+---
+
+## 14.2 No Manual Post-Install Configuration
+
+Local setup should not require manual UI configuration.
+
+Avoid instructions like:
+
+```txt
+Open RabbitMQ UI and manually create queues.
+Open MinIO UI and manually create buckets.
+Open Keycloak UI and manually configure realm.
+```
+
+Instead, provide scripts, imports, or bootstrap services.
+
+---
+
+## 14.3 Docker Image
+
+Prefer a multi-stage Dockerfile.
+
+The final image should contain:
+
+- the Go binary
+- the embedded SPA
+- no unnecessary build tools
+- no source code unless required
+
+---
+
+# 15. Documentation Rules
+
+Documentation must be maintained in both:
+
+```txt
+docs/en-US
+docs/pt-BR
+```
+
+Required documentation for non-trivial projects:
+
+```txt
+architecture.md
+local-development.md
+deployment.md
+api-guidelines.md
+database-guidelines.md
+worker-guidelines.md
+security.md
+observability.md
+ai-agent-workflow.md
+```
+
+When creating or changing a documentation file, update both languages.
+
+Do not let documentation drift.
+
+---
+
+# 16. ADR Rules
+
+Architecture Decision Records should be used for important decisions.
+
+ADRs live in:
+
+```txt
+docs/en-US/adr
+docs/pt-BR/adr
+```
+
+Use ADRs for decisions such as:
+
+- adding a new service
+- changing the database strategy
+- adding a new infrastructure dependency
+- replacing RabbitMQ
+- replacing sqlc
+- replacing net/http
+- introducing Kubernetes
+- introducing a new authentication provider
+- changing the localization strategy
+
+ADR format:
+
+```md
+# ADR-0001: Title
+
+## Status
+
+Accepted
+
+## Context
+
+Describe the problem.
+
+## Decision
+
+Describe the decision.
+
+## Consequences
+
+Describe trade-offs, benefits, and costs.
+```
+
+Both English and Portuguese versions must exist.
+
+---
+
+# 17. AI Agent Workflow
+
+## 17.1 Before Making Changes
+
+Agents must:
+
+1. Read this `AGENTS.md`
+2. Inspect the existing project structure
+3. Identify the relevant module
+4. Avoid unnecessary rewrites
+5. Preserve architectural decisions
+6. Prefer small, reviewable changes
+7. Update tests when needed
+8. Update docs when needed
+9. Update OpenAPI when API contracts change
+10. Update translation files when UI text changes
+
+---
+
+## 17.2 Do Not Ignore Existing Patterns
+
+Agents must follow existing project conventions.
+
+Do not introduce a new pattern if an equivalent pattern already exists.
+
+Do not rename large parts of the project without explicit instruction.
+
+Do not replace the architecture.
+
+---
+
+## 17.3 Required Checks Before Finishing
+
+Before considering a task complete, run or document the relevant checks.
+
+Preferred checks:
+
+```bash
+go test ./...
+go vet ./...
+sqlc generate
+npm test
+npm run build
+docker compose config
+```
+
+Use the commands that actually exist in the project.
+
+Do not invent commands.
+
+If a command is unavailable, state that it was not run and explain why.
+
+---
+
+## 17.4 Agent Output
+
+When reporting work, include:
+
+- what changed
+- why it changed
+- files touched
+- tests/checks run
+- tests/checks not run
+- risks or follow-up items
+
+Do not claim success without verification.
+
+---
+
+# 18. Forbidden Changes Without Explicit Approval
+
+Do not introduce these without explicit approval:
+
+- Nest.js
+- Next.js
+- chi
+- gin
+- echo
+- fiber
+- Ent
+- GORM
+- Prisma
+- NATS
+- Kafka
+- ELK
+- MongoDB
+- GraphQL
+- microservices split
+- Kubernetes-only local development
+- hardcoded UI strings
+- Portuguese identifiers in code
+- browser-stored access tokens
+- manual-only infrastructure setup
+
+---
+
+# 19. Definition of Done
+
+A task is complete only when:
+
+- the change follows this `AGENTS.md`
+- the code builds
+- relevant tests pass
+- user-facing strings are localized
+- no hardcoded UI text was introduced
+- APIs return stable error codes
+- OpenAPI was updated when contracts changed
+- migrations were added when schema changed
+- sqlc was regenerated when queries changed
+- docs were updated in both languages when needed
+- no forbidden dependency was introduced
+- logs and internal messages remain in English
+- security boundaries were preserved
+- the work is small enough to review
+
+---
+
+# 20. Project Philosophy
+
+Prefer explicit code over magic.
+
+Prefer standard library over unnecessary frameworks.
+
+Prefer SQL over hidden ORM behavior.
+
+Prefer modular monolith over premature microservices.
+
+Prefer Docker Compose first.
+
+Prefer Kubernetes later only when justified.
+
+Prefer self-hostable infrastructure.
+
+Prefer stable contracts.
+
+Prefer auditability.
+
+Prefer boring, reliable technology.
+
+Prefer code that AI agents and humans can both understand.
+
+The default answer to unnecessary complexity is no.

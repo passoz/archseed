@@ -244,7 +244,8 @@ func buildBackendConfig(choice string) config.Stack {
 	case "Go (1.26+)":
 		s.Backend.Language = "go"
 		s.Backend.Framework = "net-http"
-		s.Backend.Router = "chi"
+		s.Backend.Router = "net-http"
+		s.Backend.ORM = "sqlc"
 		s.Backend.APIContract = "openapi"
 	case "NestJS":
 		s.Backend.Language = "typescript"

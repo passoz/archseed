@@ -1,7 +1,7 @@
-name: legaltech-production
-description: Brazilian legaltech projects, court automation, process tracking, PDF storage, workers and auditability.
+name: go-bff-spa
+description: Go BFF + React SPA modular monolith with PostgreSQL, RabbitMQ, Redis, and MinIO. Uses sqlc for database access, net/http stdlib routing, and embedded React SPA served by the Go binary.
 project:
-  type: legaltech
+  type: saas
   maturity: production
   repo: monorepo
 features:
@@ -13,7 +13,6 @@ features:
   storage: true
   auth: true
   workers: true
-  audit_log: true
   docker: true
   github: true
   agents: true
@@ -30,6 +29,7 @@ stack:
     framework: react
     styling: tailwind
     build_tool: vite
+    bff: go
   database:
     primary: postgres
     cache: redis
@@ -43,18 +43,8 @@ stack:
     enabled: true
     use_cases:
       - outbox
-      - scraping
-      - document-processing
+      - files
       - notifications
-  domain:
-    concepts:
-      - process
-      - party
-      - court
-      - movement
-      - document
-      - deadline
-      - hearing
   observability:
     logs: structured
     stack: loki-grafana-prometheus

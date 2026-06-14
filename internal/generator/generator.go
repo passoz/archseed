@@ -173,10 +173,49 @@ func buildFileList(preset *config.PresetConfig) []fileSpec {
 	if preset.Features.Docker {
 		files = append(files, fileSpec{template: "root/docker-compose.yml", path: "docker-compose.yml", required: true})
 		files = append(files, fileSpec{template: "root/Makefile", path: "Makefile", required: true})
+		files = append(files, fileSpec{template: "backend/Dockerfile", path: "Dockerfile", required: false})
 	}
 
 	if preset.Features.Observability {
 		files = append(files, fileSpec{template: "docs/OBSERVABILITY.md", path: "docs/engineering/OBSERVABILITY.md", required: false})
+	}
+
+	if preset.Features.Backend {
+		files = append(files,
+			fileSpec{template: "backend/go.mod", path: "go.mod", required: true},
+			fileSpec{template: "backend/main.go", path: "cmd/app/main.go", required: true},
+			fileSpec{template: "backend/config.go", path: "internal/platform/config/config.go", required: true},
+			fileSpec{template: "backend/logger.go", path: "internal/platform/logger/logger.go", required: true},
+			fileSpec{template: "backend/httpserver.go", path: "internal/platform/httpserver/server.go", required: true},
+			fileSpec{template: "backend/database.go", path: "internal/platform/database/db.go", required: true},
+			fileSpec{template: "backend/routes.go", path: "internal/bff/routes.go", required: true},
+			fileSpec{template: "backend/spa.go", path: "internal/bff/spa.go", required: preset.Features.Frontend},
+		)
+	}
+
+	if preset.Features.Frontend {
+		files = append(files,
+			fileSpec{template: "frontend/package.json", path: "web/package.json", required: true},
+			fileSpec{template: "frontend/vite.config.ts", path: "web/vite.config.ts", required: true},
+			fileSpec{template: "frontend/tsconfig.json", path: "web/tsconfig.json", required: true},
+			fileSpec{template: "frontend/index.html", path: "web/index.html", required: true},
+			fileSpec{template: "frontend/index.css", path: "web/src/index.css", required: true},
+			fileSpec{template: "frontend/main.tsx", path: "web/src/main.tsx", required: true},
+			fileSpec{template: "frontend/router.tsx", path: "web/src/router.tsx", required: true},
+			fileSpec{template: "frontend/Layout.tsx", path: "web/src/components/Layout.tsx", required: true},
+			fileSpec{template: "frontend/Home.tsx", path: "web/src/pages/Home.tsx", required: true},
+			fileSpec{template: "frontend/api-client.ts", path: "web/src/api/client.ts", required: true},
+			fileSpec{template: "frontend/en-US.json", path: "web/src/i18n/locales/en-US.json", required: true},
+			fileSpec{template: "frontend/pt-BR.json", path: "web/src/i18n/locales/pt-BR.json", required: true},
+		)
+	}
+
+	if preset.Features.Database {
+		files = append(files,
+			fileSpec{template: "database/migration_initial.up.sql", path: "db/migrations/000001_initial.up.sql", required: true},
+			fileSpec{template: "database/users.sql", path: "db/queries/users.sql", required: true},
+			fileSpec{template: "database/sqlc.yaml", path: "db/sqlc.yaml", required: true},
+		)
 	}
 
 	return files

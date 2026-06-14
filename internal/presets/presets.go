@@ -23,11 +23,15 @@ var saasProductionYAML []byte
 //go:embed data/legaltech-production.yaml
 var legaltechProductionYAML []byte
 
+//go:embed data/go-bff-spa.yaml
+var goBffSpaYAML []byte
+
 var presetMap = map[string][]byte{
 	"tiny-web":             tinyWebYAML,
 	"solo-mvp":             soloMVPYAML,
 	"saas-production":      saasProductionYAML,
 	"legaltech-production": legaltechProductionYAML,
+	"go-bff-spa":           goBffSpaYAML,
 }
 
 // List returns the names of all available presets.
